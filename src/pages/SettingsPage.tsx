@@ -69,6 +69,31 @@ const SettingsPage = () => {
         audit_log: __('Enregistre toutes les actions sensibles dans un journal d\'audit sécurisé.', 'lebo-secu'),
     };
 
+    const calculateSecurityScore = () => {
+        const criticalFeatures = [
+            'hide_version',
+            'admin_url',
+            'login_protection',
+            'user_enumeration',
+            'rest_api',
+            'security_headers',
+            'disable_features',
+            'htaccess',
+            'audit_log',
+        ];
+
+        let score = 0;
+        criticalFeatures.forEach(feature => {
+            if (config.features[feature] && config.features[feature].enabled) {
+                score++;
+            }
+        });
+
+        return Math.round((score / criticalFeatures.length) * 10);
+    };
+
+    const securityScore = calculateSecurityScore();
+
     return (
         <div className="lbs-settings-container">
             {notice && (
@@ -80,6 +105,13 @@ const SettingsPage = () => {
                     {notice.message}
                 </Notice>
             )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '20px 0 40px 0' }}>
+                <div className="lbs-score-card" style={{ marginBottom: 0 }}>
+                    <div className="lbs-score-value">{securityScore}/10</div>
+                    <div className="lbs-score-label">{__('Score de sécurité', 'lebo-secu')}</div>
+                </div>
+            </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                 <h2 style={{ fontSize: '1.5em', margin: 0 }}>{__('Modules de sécurité', 'lebo-secu')}</h2>
