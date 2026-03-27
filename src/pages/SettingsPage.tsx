@@ -79,13 +79,35 @@ const SettingsPage = () => {
 
                         return (
                             <PanelRow key={featureId} className="lbs-feature-panel">
-                                <div>
+                                <div style={{ borderBottom: '1px solid #eee', paddingBottom: '15px' }}>
                                     <h3>{featureNames[featureId]}</h3>
                                     <ToggleControl
                                         label={featureConfig.enabled ? __('Activé', 'lebo-secu') : __('Désactivé', 'lebo-secu')}
                                         checked={featureConfig.enabled}
                                         onChange={(val) => handleFeatureToggle(featureId, val)}
                                     />
+                                    
+                                    {featureId === 'admin_url' && featureConfig.enabled && (
+                                        <div style={{ marginTop: '10px', padding: '10px', background: '#f8f9fa', borderRadius: '4px' }}>
+                                            <p style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#666' }}>
+                                                {__('Choisissez la nouvelle URL pour remplacer /wp-admin et /wp-login.php :', 'lebo-secu')}
+                                            </p>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                <code>{window.location.origin}/</code>
+                                                <input 
+                                                    type="text" 
+                                                    value={featureConfig.slug || 'mon-espace-admin'} 
+                                                    onChange={(e) => {
+                                                        const newConfig = { ...config };
+                                                        newConfig.features[featureId].slug = e.target.value;
+                                                        setConfig(newConfig);
+                                                    }}
+                                                    placeholder="mon-espace-admin"
+                                                    style={{ padding: '3px 8px', borderRadius: '4px', border: '1px solid #8c8f94' }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </PanelRow>
                         );
