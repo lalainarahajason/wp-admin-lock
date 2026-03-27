@@ -75,11 +75,23 @@ class LBS_AdminUrl implements LBS_Feature_Interface {
 
 		$slug = sanitize_title( $this->config['slug'] ?? '' );
 
-		// 6. Slug custom → laisser passer (servir wp-login.php).
-		if ( $slug && str_contains( $path, '/' . $slug ) ) return;
+		// 6. Slug custom → intercepter et charger le moteur de connexion (wp-login.php).
+		$path_without_slash = trim( $path, '/' );
+		if ( $slug && ( $path_without_slash === $slug || str_starts_with( $path_without_slash, $slug . '/' ) ) ) {
+			global $pagenow, $error, $interim_login, $action, $user_login;
+			$pagenow = 'wp-login.php';
+			@require_once ABSPATH . 'wp-login.php';
+			exit;
+		}
 
-		// 7. Accès à /wp-login.php ou /wp-admin → 404 léger sans rendu thème.
-		if ( str_contains( $path, 'wp-login.php' ) || str_contains( $path, 'wp-admin' ) ) {
+		// 7. Accès direct interdit à wp-login.php et wp-admin (si non connecté).
+		// On ne bloque wp-admin que si l'utilisateur n'est pas connecté.
+		if ( str_contains( $path, 'wp-login.php' ) ) {
+			wp_die( '', '', array( 'response' => 404 ) );
+		}
+
+		// Si c'est wp-admin ET non connecté (et ce n'est pas admin-ajax)
+		if ( str_contains( $path, 'wp-admin' ) && ! is_user_logged_in() ) {
 			wp_die( '', '', array( 'response' => 404 ) );
 		}
 	}
