@@ -120,35 +120,36 @@ const HtaccessPage = () => {
             }}>
                 {/* Barre d'état de l'éditeur */}
                 <div style={{
-                    background: '#1e1e1e',
-                    color: '#d4d4d4',
+                    background: '#f0f0f1',
+                    color: '#3c434a',
                     padding: '8px 15px',
                     fontFamily: 'monospace',
                     fontSize: '12px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between'
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid #ccd0d4'
                 }}>
                     <span>📄 .htaccess</span>
-                    <span style={{ opacity: 0.6 }}>{lineCount} ligne{lineCount > 1 ? 's' : ''} · Apache config</span>
+                    <span style={{ opacity: 0.8 }}>{lineCount} ligne{lineCount > 1 ? 's' : ''} · Apache config</span>
                 </div>
 
                 {/* Zone de texte éditable */}
-                <div style={{ display: 'flex', background: '#1e1e1e', height: '420px', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', background: '#fff', height: '420px', overflow: 'hidden' }}>
                     {/* Numéros de ligne — défilent avec le textarea */}
                     <div
                         ref={lineNumbersRef}
                         style={{
                             padding: '12px 10px',
-                            background: '#252526',
-                            color: '#858585',
+                            background: '#f6f7f7',
+                            color: '#646970',
                             fontFamily: '"Fira Code", "Courier New", monospace',
                             fontSize: '13px',
                             lineHeight: '1.6',
                             textAlign: 'right',
                             userSelect: 'none',
                             minWidth: '45px',
-                            borderRight: '1px solid #3c3c3c',
+                            borderRight: '1px solid #ccd0d4',
                             whiteSpace: 'pre',
                             overflowY: 'hidden'
                         }}
@@ -165,8 +166,8 @@ const HtaccessPage = () => {
                         spellCheck={false}
                         style={{
                             flex: 1,
-                            background: '#1e1e1e',
-                            color: '#d4d4d4',
+                            background: '#ffffff',
+                            color: '#3c434a',
                             fontFamily: '"Fira Code", "Courier New", monospace',
                             fontSize: '13px',
                             lineHeight: '1.6',
@@ -184,8 +185,8 @@ const HtaccessPage = () => {
 
                 {/* Barre d'actions */}
                 <div style={{
-                    background: '#2d2d2d',
-                    borderTop: '1px solid #3c3c3c',
+                    background: '#f0f0f1',
+                    borderTop: '1px solid #ccd0d4',
                     padding: '10px 15px',
                     display: 'flex',
                     alignItems: 'center',
@@ -206,7 +207,7 @@ const HtaccessPage = () => {
                     >
                         Annuler les modifications
                     </Button>
-                    <span style={{ marginLeft: 'auto', color: '#888', fontSize: '12px' }}>
+                    <span style={{ marginLeft: 'auto', color: '#50575e', fontSize: '12px' }}>
                         ⚠️ Un backup automatique est créé avant chaque sauvegarde.
                     </span>
                 </div>
