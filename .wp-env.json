@@ -4,7 +4,7 @@
   "mappings": {
     "wp-content/plugins/lebo-secu": "."
   },
-  "plugins": [
-    "."
-  ]
+  "lifecycleScripts": {
+    "afterEnvReady": "wp plugin activate lebo-secu/plugin/lebo-secu.php"
+  }
 }
