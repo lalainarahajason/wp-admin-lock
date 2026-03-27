@@ -51,6 +51,23 @@ class LBS_Admin_Api {
 				),
 			)
 		);
+
+		register_rest_route(
+			'lebo-secu/v1',
+			'/htaccess',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_htaccess' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'update_htaccess' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -118,5 +135,50 @@ class LBS_Admin_Api {
 		);
 
 		return new WP_REST_Response( array( 'logs' => $results ?: array() ), 200 );
+	}
+	/**
+	 * Récupère le contenu actuel du .htaccess.
+	 *
+	 * @param WP_REST_Request $request
+	 * @return WP_REST_Response
+	 */
+	public function get_htaccess( WP_REST_Request $request ): WP_REST_Response {
+		$config  = LBS_Helpers::get_config();
+		$manager = new LBS_HtaccessManager( $config );
+		$content = $manager->read();
+
+		if ( is_wp_error( $content ) ) {
+			return new WP_REST_Response( array( 'error' => $content->get_error_message() ), 500 );
+		}
+
+		return new WP_REST_Response( array( 'content' => $content ), 200 );
+	}
+
+	/**
+	 * Met à jour le bloc Lebo Secu dans le .htaccess.
+	 *
+	 * @param WP_REST_Request $request
+	 * @return WP_REST_Response
+	 */
+	public function update_htaccess( WP_REST_Request $request ): WP_REST_Response {
+		$params = $request->get_json_params();
+		if ( ! isset( $params['rules'] ) ) {
+			return new WP_REST_Response( array( 'message' => 'Invalid data' ), 400 );
+		}
+
+		$config  = LBS_Helpers::get_config();
+		$manager = new LBS_HtaccessManager( $config );
+
+		$result = $manager->write( (string) $params['rules'] );
+
+		if ( is_wp_error( $result ) ) {
+			return new WP_REST_Response( array( 'error' => $result->get_error_message() ), 500 );
+		}
+
+		// Update config
+		$config['features']['htaccess']['rules'] = $params['rules'];
+		update_option( 'lebosecu_config', $config, false );
+
+		return new WP_REST_Response( array( 'success' => true ), 200 );
 	}
 }

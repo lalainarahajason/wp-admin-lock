@@ -87,6 +87,15 @@ class LBS_Admin_Page {
 			'lebo-secu-audit',
 			array( $this, 'render_audit_log' )
 		);
+
+		add_submenu_page(
+			'lebo-secu',
+			esc_html__( 'Fichier .htaccess', 'lebo-secu' ),
+			esc_html__( 'Fichier .htaccess', 'lebo-secu' ),
+			'manage_options',
+			'lebo-secu-htaccess',
+			array( $this, 'render_htaccess' )
+		);
 	}
 
 	/**
@@ -225,6 +234,23 @@ class LBS_Admin_Page {
 		<div class="wrap lbs-wrap">
 			<h1><?php esc_html_e( 'Lebo Secu — Journal d\'audit', 'lebo-secu' ); ?></h1>
 			<div id="lbs-audit-log-app"></div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Rendu de l'éditeur .htaccess.
+	 *
+	 * @return void
+	 */
+	public function render_htaccess(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		?>
+		<div class="wrap lbs-wrap">
+			<h1><?php esc_html_e( 'Lebo Secu — Éditeur .htaccess', 'lebo-secu' ); ?></h1>
+			<div id="lbs-htaccess-app"></div>
 		</div>
 		<?php
 	}
