@@ -142,7 +142,10 @@ class LBS_Admin_Api {
 
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table_name} ORDER BY created_at DESC LIMIT %d OFFSET %d",
+				"SELECT l.*, u.user_login 
+				 FROM {$table_name} l 
+				 LEFT JOIN {$wpdb->users} u ON l.user_id = u.ID 
+				 ORDER BY l.created_at DESC LIMIT %d OFFSET %d",
 				$per_page,
 				$offset
 			),

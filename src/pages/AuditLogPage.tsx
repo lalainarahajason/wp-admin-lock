@@ -44,10 +44,20 @@ const AuditLogPage = () => {
                         logs.map((log: any) => (
                             <tr key={log.id}>
                                 <td>{log.created_at}</td>
-                                <td><strong>{log.action}</strong></td>
-                                <td>{log.user_id || '-'}</td>
+                                <td><strong>{log.event_type}</strong></td>
+                                <td>{log.user_login ? log.user_login : (log.user_id || '-')}</td>
                                 <td>{log.ip_address}</td>
-                                <td>{log.details ? JSON.stringify(log.details) : ''}</td>
+                                <td>
+                                    {(() => {
+                                        if (!log.details) return '';
+                                        try {
+                                            const detailsObj = typeof log.details === 'string' ? JSON.parse(log.details) : log.details;
+                                            return Object.entries(detailsObj).map(([k, v]) => `${k}: ${v}`).join(', ');
+                                        } catch (e) {
+                                            return String(log.details);
+                                        }
+                                    })()}
+                                </td>
                             </tr>
                         ))
                     )}
