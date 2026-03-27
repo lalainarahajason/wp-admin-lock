@@ -44,7 +44,7 @@ jobs:
           restore-keys: ${{ runner.os }}-composer-
 
       - name: Install JS Dependencies
-        run: npm ci
+        run: npm install
 
 
       - name: Install PHP Dependencies
