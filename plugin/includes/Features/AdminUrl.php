@@ -82,14 +82,16 @@ class LBS_AdminUrl implements LBS_Feature_Interface {
 		}
 
 		// 7. Accès direct interdit à wp-login.php et wp-admin (si non connecté).
-		// On ne bloque wp-admin que si l'utilisateur n'est pas connecté.
+		// Au lieu d'une page blanche (wp_die), on redirige vers /404 pour que le thème
+		// affiche sa vraie page d'erreur 404, ce qui est beaucoup plus clair pour l'utilisateur.
 		if ( str_contains( $path, 'wp-login.php' ) ) {
-			wp_die( '', '', array( 'response' => 404 ) );
+			wp_safe_redirect( home_url( '/404' ) );
+			exit;
 		}
 
-		// Si c'est wp-admin ET non connecté (et ce n'est pas admin-ajax)
 		if ( str_contains( $path, 'wp-admin' ) && ! is_user_logged_in() ) {
-			wp_die( '', '', array( 'response' => 404 ) );
+			wp_safe_redirect( home_url( '/404' ) );
+			exit;
 		}
 	}
 
