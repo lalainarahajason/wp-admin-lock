@@ -56,7 +56,6 @@ const SettingsPage = () => {
         security_headers: __('Headers de sécurité HTTP', 'lebo-secu'),
         disable_features: __('Désactivation features WP', 'lebo-secu'),
         audit_log: __('Audit Log', 'lebo-secu'),
-        htaccess: __('Protection .htaccess', 'lebo-secu'), // Added htaccess to featureNames
     };
 
     const featureDescriptions: Record<string, string> = {
@@ -68,7 +67,6 @@ const SettingsPage = () => {
         security_headers: __('Ajoute des en-têtes HTTP de sécurité (X-Frame-Options, X-XSS-Protection, etc.).', 'lebo-secu'),
         disable_features: __('Désactive des fonctionnalités vulnérables comme XML-RPC, l\'éditeur de fichiers et les Pingbacks.', 'lebo-secu'),
         audit_log: __('Enregistre toutes les actions sensibles dans un journal d\'audit sécurisé.', 'lebo-secu'),
-        htaccess: __('Renforce la sécurité de votre site en ajoutant des règles de protection au fichier .htaccess.', 'lebo-secu'), // Added htaccess description
     };
 
     return (
@@ -131,13 +129,6 @@ const SettingsPage = () => {
                                     </div>
                                 )}
 
-                                {featureId === 'htaccess' && featureConfig.enabled && (
-                                    <div style={{ marginTop: '10px' }}>
-                                        <a href="admin.php?page=lebo-secu-htaccess" style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                            ✏️ {__('Configurer les règles Apache', 'lebo-secu')}
-                                        </a>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     );
