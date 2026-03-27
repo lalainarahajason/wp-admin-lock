@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from '@wordpress/element';
+import { useState, useEffect, useCallback, useRef } from '@wordpress/element';
 import { Button, Notice, Spinner, ToggleControl } from '@wordpress/components';
 import { fetchConfig, saveConfig, fetchHtaccess, LbsConfig } from '../api';
 import apiFetch from '@wordpress/api-fetch';
@@ -9,6 +9,14 @@ const HtaccessPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const lineNumbersRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    const syncScroll = () => {
+        if (lineNumbersRef.current && textareaRef.current) {
+            lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
+        }
+    };
 
     const loadData = useCallback(() => {
         setIsLoading(true);
@@ -113,28 +121,34 @@ const HtaccessPage = () => {
                 </div>
 
                 {/* Zone de texte éditable */}
-                <div style={{ display: 'flex', background: '#1e1e1e' }}>
-                    {/* Numéros de ligne */}
-                    <div style={{
-                        padding: '12px 10px',
-                        background: '#252526',
-                        color: '#858585',
-                        fontFamily: '"Fira Code", "Courier New", monospace',
-                        fontSize: '13px',
-                        lineHeight: '1.6',
-                        textAlign: 'right',
-                        userSelect: 'none',
-                        minWidth: '40px',
-                        borderRight: '1px solid #3c3c3c',
-                        whiteSpace: 'pre'
-                    }}>
+                <div style={{ display: 'flex', background: '#1e1e1e', height: '420px', overflow: 'hidden' }}>
+                    {/* Numéros de ligne — défilent avec le textarea */}
+                    <div
+                        ref={lineNumbersRef}
+                        style={{
+                            padding: '12px 10px',
+                            background: '#252526',
+                            color: '#858585',
+                            fontFamily: '"Fira Code", "Courier New", monospace',
+                            fontSize: '13px',
+                            lineHeight: '1.6',
+                            textAlign: 'right',
+                            userSelect: 'none',
+                            minWidth: '45px',
+                            borderRight: '1px solid #3c3c3c',
+                            whiteSpace: 'pre',
+                            overflowY: 'hidden'
+                        }}
+                    >
                         {htaccessContent.split('\n').map((_, i) => `${i + 1}`).join('\n')}
                     </div>
 
                     {/* Contenu éditable */}
                     <textarea
+                        ref={textareaRef}
                         value={htaccessContent}
                         onChange={(e) => setHtaccessContent(e.target.value)}
+                        onScroll={syncScroll}
                         spellCheck={false}
                         style={{
                             flex: 1,
@@ -146,10 +160,11 @@ const HtaccessPage = () => {
                             padding: '12px 15px',
                             border: 'none',
                             outline: 'none',
-                            resize: 'vertical',
-                            minHeight: '400px',
-                            whiteSpace: 'pre',
-                            overflowX: 'auto'
+                            resize: 'none',
+                            height: '100%',
+                            overflowY: 'scroll',
+                            overflowX: 'auto',
+                            whiteSpace: 'pre'
                         }}
                     />
                 </div>
