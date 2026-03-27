@@ -33,6 +33,10 @@ class LBS_SecurityHeaders implements LBS_Feature_Interface {
 	 * @return void
 	 */
 	public function send_security_headers(): void {
+		if ( headers_sent() ) {
+			return;
+		}
+
 		$headers = $this->config['headers'] ?? array();
 
 		if ( ! empty( $headers['x_frame_options']['enabled'] ) ) {

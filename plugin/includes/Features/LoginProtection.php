@@ -56,7 +56,9 @@ class LBS_LoginProtection implements LBS_Feature_Interface {
 			$duration    = (int) ( $this->config['lockout_duration'] ?? 900 );
 			$retry_after = max( 0, $locked_at + $duration - time() );
 
-			header( 'Retry-After: ' . $retry_after );
+			if ( ! headers_sent() ) {
+				header( 'Retry-After: ' . $retry_after );
+			}
 
 			return new WP_Error(
 				'too_many_attempts',
