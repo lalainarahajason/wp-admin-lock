@@ -131,6 +131,7 @@ class LBS_Helpers {
 							'value'       => '',
 						),
 					),
+					'custom_headers' => array(),
 				),
 				'disable_features' => array(
 					'enabled'     => true,

@@ -67,5 +67,20 @@ class LBS_SecurityHeaders implements LBS_Feature_Interface {
 				header( $csp_header . ': ' . $csp_value );
 			}
 		}
+
+		$custom_headers = $this->config['custom_headers'] ?? array();
+		if ( is_array( $custom_headers ) ) {
+			foreach ( $custom_headers as $custom ) {
+				if ( ! empty( $custom['key'] ) && isset( $custom['value'] ) ) {
+					// Sanitization basique pour éviter CR/LF injection
+					$key   = sanitize_text_field( $custom['key'] );
+					$value = sanitize_text_field( $custom['value'] );
+					// Prévention rudimentaire contre l'écrasement de headers critiques
+					if ( strtolower( $key ) !== 'content-type' && strtolower( $key ) !== 'location' ) {
+						header( $key . ': ' . $value, false );
+					}
+				}
+			}
+		}
 	}
 }

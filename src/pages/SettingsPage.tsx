@@ -2,11 +2,13 @@ import { useState, useEffect } from '@wordpress/element';
 import { Panel, PanelBody, PanelRow, ToggleControl, Button, Notice, Spinner, CheckboxControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { fetchConfig, saveConfig, LbsConfig } from '../api';
+import SecurityHeadersModal from '../components/SecurityHeadersModal';
 
 const SettingsPage = () => {
     const [config, setConfig] = useState<LbsConfig | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [notice, setNotice] = useState<{message: string, isError: boolean} | null>(null);
+    const [isHeadersModalOpen, setIsHeadersModalOpen] = useState(false);
 
     useEffect(() => {
         fetchConfig().then(setConfig).catch(() => {
@@ -176,11 +178,36 @@ const SettingsPage = () => {
                                         </p>
                                     </div>
                                 )}
+                                {featureId === 'security_headers' && featureConfig.enabled && (
+                                    <div style={{ marginTop: '10px' }}>
+                                        <Button 
+                                            isSecondary 
+                                            onClick={() => setIsHeadersModalOpen(true)}
+                                            style={{ fontSize: '12px' }}
+                                        >
+                                            {__('Gérer les en-têtes HTTP', 'lebo-secu')}
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     );
                 })}
             </div>
+
+            {config && config.features.security_headers && (
+                <SecurityHeadersModal
+                    isOpen={isHeadersModalOpen}
+                    onClose={() => setIsHeadersModalOpen(false)}
+                    customHeaders={config.features.security_headers.custom_headers || []}
+                    onSave={(headers) => {
+                        const newConfig = { ...config };
+                        newConfig.features.security_headers.custom_headers = headers;
+                        setConfig(newConfig);
+                    }}
+                />
+            )}
+
         </div>
     );
 };
