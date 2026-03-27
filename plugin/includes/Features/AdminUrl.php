@@ -93,7 +93,7 @@ class LBS_AdminUrl implements LBS_Feature_Interface {
 	 * @param int|null    $blog_id Blog ID (multisite).
 	 * @return string
 	 */
-	public function rewrite_login_url( string $url, string $path, string $scheme, ?int $blog_id = null ): string {
+	public function rewrite_login_url( string $url, string $path, ?string $scheme = null, ?int $blog_id = null ): string {
 		$slug = sanitize_title( $this->config['slug'] ?? '' );
 		if ( $slug && str_contains( $url, 'wp-login.php' ) ) {
 			$url = str_replace( 'wp-login.php', $slug, $url );
