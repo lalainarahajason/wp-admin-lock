@@ -31,6 +31,12 @@ class LBS_HideVersion implements LBS_Feature_Interface {
 		// Retirer la version des scripts/styles enqueuées.
 		add_filter( 'style_loader_src', array( $this, 'remove_version_query' ), 9999 );
 		add_filter( 'script_loader_src', array( $this, 'remove_version_query' ), 9999 );
+
+		// Retirer la version texte dans le footer de l'administration.
+		$hide_in_admin = ! empty( $this->config['hide_in_admin'] );
+		if ( $hide_in_admin ) {
+			add_filter( 'update_footer', '__return_empty_string', 11 );
+		}
 	}
 
 	/**
