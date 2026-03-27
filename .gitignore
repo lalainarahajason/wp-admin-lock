@@ -1,0 +1,37 @@
+# WordPress
+wp-config.php
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/cache/
+wp-content/debug.log
+
+# Plugin — dépendances
+plugin/vendor/
+node_modules/
+
+# Environnement
+docker/.env
+.env
+.env.local
+*.key
+*.pem
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Tests
+.phpunit.result.cache
+coverage/
+
+# Build
+plugin/assets/dist/

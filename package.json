@@ -1,0 +1,18 @@
+{
+  "name": "lebo-secu",
+  "version": "1.0.0",
+  "description": "Lebo Secu WordPress security plugin - Dev tooling",
+  "private": true,
+  "scripts": {
+    "build": "echo 'No build step required for v1.0'",
+    "dev": "wp-env start",
+    "test": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/lebo-secu composer run test",
+    "lint:php": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/lebo-secu vendor/bin/phpcs --standard=phpcs.xml plugin/",
+    "env:start": "wp-env start",
+    "env:stop": "wp-env stop",
+    "env:clean": "wp-env clean"
+  },
+  "devDependencies": {
+    "@wordpress/env": "^10.0"
+  }
+}

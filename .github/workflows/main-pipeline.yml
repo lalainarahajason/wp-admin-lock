@@ -1,0 +1,133 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, fix-pcp, prod-fix ]
+  pull_request:
+    branches: [ main, unit-test ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer, cs2pr
+          coverage: none
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache PHP dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install JS Dependencies
+        run: npm ci
+
+      - name: Build Assets
+        run: npm run build
+
+      - name: Install PHP Dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run PHPCS (Code Standards)
+        run: vendor/bin/phpcs --standard=phpcs.xml --report=checkstyle | cs2pr
+
+      - name: Start WordPress Environment
+        run: npx wp-env start
+        
+      - name: Run PHP Tests
+        run: npx wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/lebo-secu composer run test
+
+  deploy-prod:
+    name: Prepare & Deploy Production
+    needs: test
+    # S'exécute uniquement lors d'un push sur les branches de production
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix-pcp' || github.ref == 'refs/heads/prod-fix')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Install Production Dependencies
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: Clean Development Files
+        run: |
+          # Remove dev config files
+          rm -f .wp-env.json .env .env.example
+          rm -f .gitignore .geminiignore
+          rm -f debug_logic.php debug_reset.php
+          rm -f phpcs.xml phpunit.xml phpunit.xml.dist
+          rm -f .eslintrc.js jest.config.js
+          # Retain composer.json and package.json as required by WordPress.org
+          # rm -f composer.json composer.lock package.json package-lock.json
+          rm -f GEMINI.md
+          rm -f *_report.txt *.log fix-cs.sh
+          rm -f docker-compose.yml
+          rm -f wordpress-plugin-check.skill
+          
+          # Remove any .DS_Store files and .gitkeep files
+          find . -name ".DS_Store" -delete
+          find . -name ".gitkeep" -delete
+          
+          # Remove dev directories
+          rm -rf .antigravity
+          rm -rf .agents
+          rm -rf .agent
+          rm -rf .gemini
+          rm -rf .jest-cache
+          rm -rf .idea
+          rm -rf docs
+          rm -rf uploads
+          rm -rf tests
+          rm -rf bin
+          rm -rf node_modules
+          rm -rf wordpress-plugin-check
+          rm -rf mock
+          
+          # Final cleanup: Remove .github folder and .git folder
+          rm -rf .github
+          rm -rf .git
+
+      - name: Initialize and Push to Prod Branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git checkout -b prod
+          git add .
+          git commit -m "Production Build: $(date)"
+          
+          # Force push to the prod branch of the current repository
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+          git push -f origin prod
