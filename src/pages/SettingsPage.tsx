@@ -47,7 +47,6 @@ const SettingsPage = () => {
     if (!config) {
         return <Spinner />;
     }
-
     const featureNames: Record<string, string> = {
         admin_url: __('Custom Admin URL', 'lebo-secu'),
         hide_version: __('Masquer la version WP', 'lebo-secu'),
@@ -57,6 +56,19 @@ const SettingsPage = () => {
         security_headers: __('Headers de sécurité HTTP', 'lebo-secu'),
         disable_features: __('Désactivation features WP', 'lebo-secu'),
         audit_log: __('Audit Log', 'lebo-secu'),
+        htaccess: __('Protection .htaccess', 'lebo-secu'), // Added htaccess to featureNames
+    };
+
+    const featureDescriptions: Record<string, string> = {
+        admin_url: __('Change l\'URL d\'accès à l\'administration pour bloquer les bots qui ciblent /wp-admin.', 'lebo-secu'),
+        hide_version: __('Supprime la version de WordPress des sources HTML pour limiter la reconnaissance des failles.', 'lebo-secu'),
+        rest_api: __('Bloque l\'accès public à l\'API REST pour les utilisateurs non authentifiés.', 'lebo-secu'),
+        login_protection: __('Limite le nombre de tentatives de connexion échouées pour bloquer les attaques par force brute.', 'lebo-secu'),
+        user_enumeration: __('Empêche la découverte des identifiants utilisateurs via les archives d\'auteur.', 'lebo-secu'),
+        security_headers: __('Ajoute des en-têtes HTTP de sécurité (X-Frame-Options, X-XSS-Protection, etc.).', 'lebo-secu'),
+        disable_features: __('Désactive des fonctionnalités vulnérables comme XML-RPC, l\'éditeur de fichiers et les Pingbacks.', 'lebo-secu'),
+        audit_log: __('Enregistre toutes les actions sensibles dans un journal d\'audit sécurisé.', 'lebo-secu'),
+        htaccess: __('Renforce la sécurité de votre site en ajoutant des règles de protection au fichier .htaccess.', 'lebo-secu'), // Added htaccess description
     };
 
     return (
@@ -71,62 +83,65 @@ const SettingsPage = () => {
                 </Notice>
             )}
 
-            <Panel>
-                <PanelBody title={__('Modules de sécurité', 'lebo-secu')} initialOpen={true}>
-                    {Object.keys(featureNames).map(featureId => {
-                        const featureConfig = config.features[featureId];
-                        if (!featureConfig) return null;
-
-                        return (
-                            <PanelRow key={featureId} className="lbs-feature-panel">
-                                <div style={{ borderBottom: '1px solid #eee', paddingBottom: '15px' }}>
-                                    <h3>{featureNames[featureId]}</h3>
-                                    <ToggleControl
-                                        label={featureConfig.enabled ? __('Activé', 'lebo-secu') : __('Désactivé', 'lebo-secu')}
-                                        checked={featureConfig.enabled}
-                                        onChange={(val) => handleFeatureToggle(featureId, val)}
-                                    />
-                                    
-                                    {featureId === 'admin_url' && featureConfig.enabled && (
-                                        <div style={{ marginTop: '10px', padding: '10px', background: '#f8f9fa', borderRadius: '4px' }}>
-                                            <p style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#666' }}>
-                                                {__('Choisissez la nouvelle URL pour remplacer /wp-admin et /wp-login.php :', 'lebo-secu')}
-                                            </p>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                <code>{window.location.origin}/</code>
-                                                <input 
-                                                    type="text" 
-                                                    value={featureConfig.slug || 'mon-espace-admin'} 
-                                                    onChange={(e) => {
-                                                        const newConfig = { ...config };
-                                                        newConfig.features[featureId].slug = e.target.value;
-                                                        setConfig(newConfig);
-                                                    }}
-                                                    placeholder="mon-espace-admin"
-                                                    style={{ padding: '3px 8px', borderRadius: '4px', border: '1px solid #8c8f94' }}
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {featureId === 'htaccess' && featureConfig.enabled && (
-                                        <div style={{ marginTop: '8px' }}>
-                                            <a href="admin.php?page=lebo-secu-htaccess" style={{ fontSize: '13px' }}>
-                                                ✏️ {__('Configurer le fichier .htaccess →', 'lebo-secu')}
-                                            </a>
-                                        </div>
-                                    )}
-                                </div>
-                            </PanelRow>
-                        );
-                    })}
-                </PanelBody>
-            </Panel>
-
-            <div style={{ marginTop: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <h2 style={{ fontSize: '1.5em', margin: 0 }}>{__('Modules de sécurité', 'lebo-secu')}</h2>
                 <Button isPrimary isBusy={isSaving} disabled={isSaving} onClick={onSave}>
                     {__('Sauvegarder les réglages', 'lebo-secu')}
                 </Button>
+            </div>
+
+            <div className="lbs-settings-grid">
+                {Object.keys(featureNames).map(featureId => {
+                    const featureConfig = config.features[featureId];
+                    if (!featureConfig) return null;
+
+                    return (
+                        <div key={featureId} className="lbs-settings-card">
+                            <div className="lbs-settings-card-header">
+                                <h3>{featureNames[featureId]}</h3>
+                                <ToggleControl
+                                    label={featureConfig.enabled ? __('Activé', 'lebo-secu') : __('Désactivé', 'lebo-secu')}
+                                    checked={featureConfig.enabled}
+                                    onChange={(val) => handleFeatureToggle(featureId, val)}
+                                />
+                            </div>
+                            
+                            <div className="lbs-settings-card-body">
+                                <p>{featureDescriptions[featureId]}</p>
+                                
+                                {featureId === 'admin_url' && featureConfig.enabled && (
+                                    <div style={{ marginTop: '10px', padding: '10px', background: '#f8f9fa', borderRadius: '4px', border: '1px solid #e2e4e7' }}>
+                                        <p style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#666' }}>
+                                            {__('Nouvelle URL pour remplacer /wp-admin :', 'lebo-secu')}
+                                        </p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                            <code>{window.location.origin}/</code>
+                                            <input 
+                                                type="text" 
+                                                value={featureConfig.slug || 'mon-espace-admin'} 
+                                                onChange={(e) => {
+                                                    const newConfig = { ...config };
+                                                    newConfig.features[featureId].slug = e.target.value;
+                                                    setConfig(newConfig);
+                                                }}
+                                                placeholder="mon-espace-admin"
+                                                style={{ padding: '3px 8px', borderRadius: '4px', border: '1px solid #8c8f94', width: '100%' }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {featureId === 'htaccess' && featureConfig.enabled && (
+                                    <div style={{ marginTop: '10px' }}>
+                                        <a href="admin.php?page=lebo-secu-htaccess" style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                            ✏️ {__('Configurer les règles Apache', 'lebo-secu')}
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
