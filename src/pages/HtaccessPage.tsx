@@ -59,7 +59,20 @@ const HtaccessPage = () => {
             data: { content: htaccessContent },
         } as any)
             .then(() => {
-                setMessage({ type: 'success', text: '.htaccess sauvegardé avec succès. Un backup automatique a été créé.' });
+                // Sync la config DB : enabled=true, reload la config
+                if (config) {
+                    const newConfig = {
+                        ...config,
+                        features: {
+                            ...config.features,
+                            htaccess: { ...(config.features.htaccess || {}), enabled: true }
+                        }
+                    };
+                    return saveConfig(newConfig).then((updated) => {
+                        setConfig(updated);
+                        setMessage({ type: 'success', text: '.htaccess sauvegardé avec succès. Un backup automatique a été créé.' });
+                    });
+                }
             })
             .catch((err: any) => {
                 setMessage({ type: 'error', text: err?.message || 'Erreur lors de la sauvegarde.' });

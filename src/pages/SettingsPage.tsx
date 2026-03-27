@@ -51,7 +51,6 @@ const SettingsPage = () => {
     const featureNames: Record<string, string> = {
         admin_url: __('Custom Admin URL', 'lebo-secu'),
         hide_version: __('Masquer la version WP', 'lebo-secu'),
-        htaccess: __('Gestionnaire .htaccess', 'lebo-secu'),
         rest_api: __('Protection API REST', 'lebo-secu'),
         login_protection: __('Protection page de login', 'lebo-secu'),
         user_enumeration: __('Blocage énumération users', 'lebo-secu'),
