@@ -55,12 +55,17 @@ const HtaccessPage = () => {
 
     const handleToggleFeature = (val: boolean) => {
         if (!config) return;
-        const newConfig = { ...config };
-        if (!newConfig.features.htaccess) {
-            newConfig.features.htaccess = { enabled: val, rules: customRules };
-        } else {
-            newConfig.features.htaccess.enabled = val;
-        }
+        const newConfig = {
+            ...config,
+            features: {
+                ...config.features,
+                htaccess: {
+                    ...(config.features.htaccess || {}),
+                    enabled: val,
+                    rules: customRules
+                }
+            }
+        };
         
         setConfig(newConfig);
         saveConfig(newConfig).then(() => {
