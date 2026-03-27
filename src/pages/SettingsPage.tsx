@@ -1,5 +1,5 @@
 import { useState, useEffect } from '@wordpress/element';
-import { Panel, PanelBody, PanelRow, ToggleControl, Button, Notice, Spinner } from '@wordpress/components';
+import { Panel, PanelBody, PanelRow, ToggleControl, Button, Notice, Spinner, Modal, TextareaControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { fetchConfig, saveConfig, LbsConfig } from '../api';
 
@@ -7,6 +7,7 @@ const SettingsPage = () => {
     const [config, setConfig] = useState<LbsConfig | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [notice, setNotice] = useState<{message: string, isError: boolean} | null>(null);
+    const [isHtaccessModalOpen, setIsHtaccessModalOpen] = useState(false);
 
     useEffect(() => {
         fetchConfig().then(setConfig).catch(() => {
@@ -16,6 +17,11 @@ const SettingsPage = () => {
 
     const handleFeatureToggle = (featureId: string, enabled: boolean) => {
         if (!config) return;
+
+        if (featureId === 'htaccess' && enabled) {
+            setIsHtaccessModalOpen(true);
+        }
+
         setConfig({
             ...config,
             features: {
@@ -120,6 +126,30 @@ const SettingsPage = () => {
                     {__('Sauvegarder les réglages', 'lebo-secu')}
                 </Button>
             </div>
+
+            {isHtaccessModalOpen && (
+                <Modal
+                    title={__('Règles .htaccess personnalisées', 'lebo-secu')}
+                    onRequestClose={() => setIsHtaccessModalOpen(false)}
+                >
+                    <p>{__('Ces règles seront injectées dans votre fichier .htaccess global lors de la sauvegarde.', 'lebo-secu')}</p>
+                    <TextareaControl
+                        label={__('Règles Apache', 'lebo-secu')}
+                        value={config.features?.htaccess?.rules || ''}
+                        onChange={(val) => {
+                            const newConfig = { ...config };
+                            newConfig.features.htaccess.rules = val;
+                            setConfig(newConfig);
+                        }}
+                        rows={10}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+                        <Button isPrimary onClick={() => setIsHtaccessModalOpen(false)}>
+                            {__('Ok', 'lebo-secu')}
+                        </Button>
+                    </div>
+                </Modal>
+            )}
         </div>
     );
 };

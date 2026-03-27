@@ -103,6 +103,16 @@ class LBS_Admin_Api {
 
 		update_option( 'lebosecu_config', $params, false );
 
+		// Synchronisation active du .htaccess avec la nouvelle config globale
+		$htaccess_config = $params['features']['htaccess'] ?? array();
+		$manager = new LBS_HtaccessManager( $params );
+		
+		if ( ! empty( $htaccess_config['enabled'] ) && isset( $htaccess_config['rules'] ) ) {
+			$manager->write( (string) $htaccess_config['rules'] );
+		} else {
+			$manager->remove();
+		}
+
 		return new WP_REST_Response( LBS_Helpers::get_config(), 200 );
 	}
 
