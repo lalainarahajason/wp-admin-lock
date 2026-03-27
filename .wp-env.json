@@ -5,13 +5,6 @@
     "wp-content/plugins/lebo-secu": "."
   },
   "plugins": [
-    "wp-content/plugins/lebo-secu/plugin"
-  ],
-  "env": {
-    "tests": {
-      "plugins": [
-        "wp-content/plugins/lebo-secu/plugin"
-      ]
-    }
-  }
+    "."
+  ]
 }
