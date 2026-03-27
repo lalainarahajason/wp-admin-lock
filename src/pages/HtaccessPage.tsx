@@ -1,57 +1,31 @@
-import { useState, useEffect } from '@wordpress/element';
-import { Panel, PanelBody, Button, Notice, Spinner, ToggleControl, TextareaControl } from '@wordpress/components';
-import { fetchConfig, saveConfig, fetchHtaccess, saveHtaccess, LbsConfig } from '../api';
+import { useState, useEffect, useCallback } from '@wordpress/element';
+import { Button, Notice, Spinner, ToggleControl } from '@wordpress/components';
+import { fetchConfig, saveConfig, fetchHtaccess, LbsConfig } from '../api';
+import apiFetch from '@wordpress/api-fetch';
 
 const HtaccessPage = () => {
     const [config, setConfig] = useState<LbsConfig | null>(null);
-    const [fullHtaccess, setFullHtaccess] = useState<string>('');
-    const [customRules, setCustomRules] = useState<string>('');
+    const [htaccessContent, setHtaccessContent] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    const loadData = () => {
+    const loadData = useCallback(() => {
         setIsLoading(true);
         Promise.all([fetchConfig(), fetchHtaccess()])
             .then(([configData, htaccessData]) => {
                 setConfig(configData);
-                setCustomRules(configData.features?.htaccess?.rules || '');
                 if (htaccessData.error) {
                     setMessage({ type: 'error', text: htaccessData.error });
                 } else {
-                    setFullHtaccess(htaccessData.content || '');
+                    setHtaccessContent(htaccessData.content || '');
                 }
             })
-            .catch((error) => {
-                console.error(error);
-                setMessage({ type: 'error', text: 'Erreur lors du chargement des données.' });
-            })
+            .catch(() => setMessage({ type: 'error', text: 'Erreur lors du chargement des données.' }))
             .finally(() => setIsLoading(false));
-    };
-
-    useEffect(() => {
-        loadData();
     }, []);
 
-    const handleSaveRules = () => {
-        setIsSaving(true);
-        setMessage(null);
-        
-        saveHtaccess(customRules)
-            .then((res) => {
-                if (res.error) {
-                    setMessage({ type: 'error', text: res.error });
-                } else {
-                    setMessage({ type: 'success', text: 'Règles sauvegardées et injectées avec succès.' });
-                    // Rechargement pour voir le fichier global mis à jour
-                    loadData();
-                }
-            })
-            .catch(() => {
-                setMessage({ type: 'error', text: 'Une erreur est survenue lors de la sauvegarde.' });
-            })
-            .finally(() => setIsSaving(false));
-    };
+    useEffect(() => { loadData(); }, []);
 
     const handleToggleFeature = (val: boolean) => {
         if (!config) return;
@@ -59,18 +33,30 @@ const HtaccessPage = () => {
             ...config,
             features: {
                 ...config.features,
-                htaccess: {
-                    ...(config.features.htaccess || {}),
-                    enabled: val,
-                    rules: customRules
-                }
+                htaccess: { ...(config.features.htaccess || {}), enabled: val }
             }
         };
-        
         setConfig(newConfig);
         saveConfig(newConfig).then(() => {
-            setMessage({ type: 'success', text: 'Statut de la fonctionnalité mis à jour.' });
+            setMessage({ type: 'success', text: `Module .htaccess ${val ? 'activé' : 'désactivé'}.` });
         });
+    };
+
+    const handleSaveFullFile = () => {
+        setIsSaving(true);
+        setMessage(null);
+        apiFetch({
+            path: '/lebo-secu/v1/htaccess',
+            method: 'PUT',
+            data: { content: htaccessContent },
+        } as any)
+            .then(() => {
+                setMessage({ type: 'success', text: '.htaccess sauvegardé avec succès. Un backup automatique a été créé.' });
+            })
+            .catch((err: any) => {
+                setMessage({ type: 'error', text: err?.message || 'Erreur lors de la sauvegarde.' });
+            })
+            .finally(() => setIsSaving(false));
     };
 
     if (isLoading && !config) {
@@ -78,50 +64,125 @@ const HtaccessPage = () => {
     }
 
     const isEnabled = config?.features?.htaccess?.enabled || false;
+    const lineCount = htaccessContent.split('\n').length;
 
     return (
-        <div className="lbs-settings-page">
+        <div className="lbs-settings-page" style={{ maxWidth: '900px' }}>
             {message && (
                 <Notice status={message.type} onRemove={() => setMessage(null)}>
                     {message.text}
                 </Notice>
             )}
 
-            <Panel>
-                <PanelBody title="Activation du module" initialOpen={true}>
+            {/* En-tête */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <div>
+                    <p style={{ margin: 0, color: '#666', fontSize: '13px' }}>
+                        Éditez directement le fichier <code>.htaccess</code> à la racine de votre site. Un backup est créé automatiquement à chaque sauvegarde.
+                    </p>
+                </div>
+                <div>
                     <ToggleControl
-                        label="Activer la gestion du .htaccess"
-                        help="Permet à Lebo Secu d'injecter des règles de sécurité directement dans le fichier .htaccess de votre serveur Apache."
+                        label="Module actif"
                         checked={isEnabled}
                         onChange={handleToggleFeature}
                     />
-                </PanelBody>
+                </div>
+            </div>
 
-                {isEnabled && (
-                    <PanelBody title="Règles personnalisées (Bloc Lebo Secu)" initialOpen={true}>
-                        <p>
-                            Ces règles seront injectées automatiquement entre les balises <code># BEGIN lebo-secu</code> et <code># END lebo-secu</code>.
-                        </p>
-                        <TextareaControl
-                            label="Règles Apache"
-                            value={customRules}
-                            onChange={(val) => setCustomRules(val)}
-                            rows={10}
-                            help="Attention : une erreur de syntaxe empêchera Apache de démarrer (Erreur 500 sur tout le site)."
-                        />
-                        <Button isPrimary onClick={handleSaveRules} isBusy={isSaving} disabled={isSaving}>
-                            Sauvegarder et injecter
-                        </Button>
-                    </PanelBody>
-                )}
+            {/* Éditeur principal */}
+            <div style={{
+                border: '1px solid #ccd0d4',
+                borderRadius: '4px',
+                overflow: 'hidden',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+            }}>
+                {/* Barre d'état de l'éditeur */}
+                <div style={{
+                    background: '#1e1e1e',
+                    color: '#d4d4d4',
+                    padding: '8px 15px',
+                    fontFamily: 'monospace',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                }}>
+                    <span>📄 .htaccess</span>
+                    <span style={{ opacity: 0.6 }}>{lineCount} ligne{lineCount > 1 ? 's' : ''} · Apache config</span>
+                </div>
 
-                <PanelBody title="Aperçu du fichier .htaccess global" initialOpen={false}>
-                    <p>Contenu réel du fichier <code>.htaccess</code> à la racine de votre site WordPress :</p>
-                    <pre style={{ background: '#f0f0f1', padding: '15px', overflowX: 'auto', border: '1px solid #ccd0d4' }}>
-                        {fullHtaccess || 'Fichier vide ou introuvable.'}
-                    </pre>
-                </PanelBody>
-            </Panel>
+                {/* Zone de texte éditable */}
+                <div style={{ display: 'flex', background: '#1e1e1e' }}>
+                    {/* Numéros de ligne */}
+                    <div style={{
+                        padding: '12px 10px',
+                        background: '#252526',
+                        color: '#858585',
+                        fontFamily: '"Fira Code", "Courier New", monospace',
+                        fontSize: '13px',
+                        lineHeight: '1.6',
+                        textAlign: 'right',
+                        userSelect: 'none',
+                        minWidth: '40px',
+                        borderRight: '1px solid #3c3c3c',
+                        whiteSpace: 'pre'
+                    }}>
+                        {htaccessContent.split('\n').map((_, i) => `${i + 1}`).join('\n')}
+                    </div>
+
+                    {/* Contenu éditable */}
+                    <textarea
+                        value={htaccessContent}
+                        onChange={(e) => setHtaccessContent(e.target.value)}
+                        spellCheck={false}
+                        style={{
+                            flex: 1,
+                            background: '#1e1e1e',
+                            color: '#d4d4d4',
+                            fontFamily: '"Fira Code", "Courier New", monospace',
+                            fontSize: '13px',
+                            lineHeight: '1.6',
+                            padding: '12px 15px',
+                            border: 'none',
+                            outline: 'none',
+                            resize: 'vertical',
+                            minHeight: '400px',
+                            whiteSpace: 'pre',
+                            overflowX: 'auto'
+                        }}
+                    />
+                </div>
+
+                {/* Barre d'actions */}
+                <div style={{
+                    background: '#2d2d2d',
+                    borderTop: '1px solid #3c3c3c',
+                    padding: '10px 15px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                }}>
+                    <Button
+                        isPrimary
+                        onClick={handleSaveFullFile}
+                        isBusy={isSaving}
+                        disabled={isSaving}
+                    >
+                        💾 Sauvegarder le fichier
+                    </Button>
+                    <Button
+                        isSecondary
+                        onClick={loadData}
+                        disabled={isSaving}
+                    >
+                        Annuler les modifications
+                    </Button>
+                    <span style={{ marginLeft: 'auto', color: '#888', fontSize: '12px' }}>
+                        ⚠️ Un backup automatique est créé avant chaque sauvegarde.
+                    </span>
+                </div>
+            </div>
         </div>
     );
 };

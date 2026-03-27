@@ -66,6 +66,11 @@ class LBS_Admin_Api {
 					'callback'            => array( $this, 'update_htaccess' ),
 					'permission_callback' => array( $this, 'check_permission' ),
 				),
+				array(
+					'methods'             => 'PUT',
+					'callback'            => array( $this, 'save_full_htaccess' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				),
 			)
 		);
 	}
@@ -190,5 +195,42 @@ class LBS_Admin_Api {
 		update_option( 'lebosecu_config', $config, false );
 
 		return new WP_REST_Response( array( 'success' => true ), 200 );
+	}
+
+	/**
+	 * Écrit directement le contenu complet du .htaccess (éditeur libre).
+	 *
+	 * @param WP_REST_Request $request
+	 * @return WP_REST_Response
+	 */
+	public function save_full_htaccess( WP_REST_Request $request ): WP_REST_Response {
+		$params = $request->get_json_params();
+		if ( ! isset( $params['content'] ) ) {
+			return new WP_REST_Response( array( 'message' => 'Invalid data' ), 400 );
+		}
+
+		$path = ABSPATH . '.htaccess';
+
+		if ( ! function_exists( 'WP_Filesystem' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		if ( ! WP_Filesystem() ) {
+			return new WP_REST_Response( array( 'error' => 'Impossible d\'initialiser WP_Filesystem.' ), 500 );
+		}
+
+		global $wp_filesystem;
+
+		// Backup before overwrite
+		$current = $wp_filesystem->get_contents( $path );
+		if ( $current ) {
+			update_option( 'lbs_htaccess_backup_' . time(), $current, false );
+		}
+
+		if ( ! $wp_filesystem->put_contents( $path, (string) $params['content'], FS_CHMOD_FILE ) ) {
+			return new WP_REST_Response( array( 'error' => 'Impossible d\'écrire le fichier .htaccess.' ), 500 );
+		}
+
+		return new WP_REST_Response( array( 'success' => true, 'content' => (string) $params['content'] ), 200 );
 	}
 }
