@@ -117,6 +117,9 @@ jobs:
           rm -rf node_modules
           rm -rf wordpress-plugin-check
           rm -rf mock
+          rm -rf docker
+          rm -rf features
+          rm -f Makefile
           
           # Final cleanup: Remove .github folder and .git folder
           rm -rf .github
