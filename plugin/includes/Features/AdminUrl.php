@@ -70,9 +70,6 @@ class LBS_AdminUrl implements LBS_Feature_Interface {
 		// 4. admin-ajax.php ou async-upload.php → laisser passer.
 		if ( str_ends_with( $path, 'admin-ajax.php' ) || str_ends_with( $path, 'async-upload.php' ) ) return;
 
-		// 5. Paramètre $_GET['action'] présent → laisser passer (WordPress actions).
-		if ( isset( $_GET['action'] ) ) return; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-
 		$slug = sanitize_title( $this->config['slug'] ?? '' );
 
 		// 6. Slug custom → intercepter et charger le moteur de connexion (wp-login.php).
@@ -123,7 +120,11 @@ class LBS_AdminUrl implements LBS_Feature_Interface {
 	public function rewrite_redirect( string $location, int $status ): string {
 		$slug = sanitize_title( $this->config['slug'] ?? '' );
 		if ( $slug && str_contains( $location, 'wp-login.php' ) ) {
-			$location = str_replace( 'wp-login.php', $slug, $location );
+			if ( str_starts_with( $location, 'wp-login.php' ) ) {
+				$location = home_url( '/' . $slug . substr( $location, 12 ) );
+			} else {
+				$location = str_replace( 'wp-login.php', $slug, $location );
+			}
 		}
 		return $location;
 	}
