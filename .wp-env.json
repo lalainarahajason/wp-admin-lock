@@ -1,13 +1,16 @@
 {
   "core": "WordPress/WordPress#6.4",
-  "plugins": [
-    "."
-  ],
   "phpVersion": "8.1",
+  "mappings": {
+    "wp-content/plugins/lebo-secu": "."
+  },
+  "plugins": [
+    "wp-content/plugins/lebo-secu/plugin"
+  ],
   "env": {
     "tests": {
       "plugins": [
-        "."
+        "wp-content/plugins/lebo-secu/plugin"
       ]
     }
   }
