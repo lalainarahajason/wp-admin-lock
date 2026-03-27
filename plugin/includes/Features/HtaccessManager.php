@@ -60,7 +60,7 @@ class LBS_HtaccessManager implements LBS_Feature_Interface {
 	 * @param string $rules Contenu des règles à injecter.
 	 * @return true|WP_Error
 	 */
-	public function write( string $rules ): true|WP_Error {
+	public function write( string $rules ): bool|WP_Error {
 		$path = ABSPATH . '.htaccess';
 
 		$filesystem = $this->get_filesystem();
@@ -99,7 +99,7 @@ class LBS_HtaccessManager implements LBS_Feature_Interface {
 	 *
 	 * @return true|WP_Error
 	 */
-	public function remove(): true|WP_Error {
+	public function remove(): bool|WP_Error {
 		return $this->write( '' );
 	}
 
