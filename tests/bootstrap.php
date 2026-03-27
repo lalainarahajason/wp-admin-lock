@@ -21,6 +21,9 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 define( 'LBS_TESTS_DIR', dirname( __DIR__ ) );
 define( 'LBS_PLUGIN_FILE_FOR_TESTS', LBS_TESTS_DIR . '/plugin/lebo-secu.php' );
 
+// Charger l'autoloader Composer (requis pour PHPUnit Polyfills).
+require_once LBS_TESTS_DIR . '/vendor/autoload.php';
+
 require_once $_tests_dir . '/includes/functions.php';
 
 tests_add_filter(
