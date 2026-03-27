@@ -50,14 +50,18 @@ class LBS_UserEnumeration implements LBS_Feature_Interface {
 	 * @return array<string, mixed>
 	 */
 	public function restrict_users_endpoint( array $endpoints ): array {
-		if ( isset( $endpoints['/wp/v2/users'] ) ) {
+		if ( isset( $endpoints['/wp/v2/users'] ) && is_array( $endpoints['/wp/v2/users'] ) ) {
 			foreach ( $endpoints['/wp/v2/users'] as &$endpoint ) {
-				$endpoint['permission_callback'] = static fn() => current_user_can( 'manage_options' );
+				if ( is_array( $endpoint ) ) {
+					$endpoint['permission_callback'] = static fn() => current_user_can( 'manage_options' );
+				}
 			}
 		}
-		if ( isset( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] ) ) {
+		if ( isset( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] ) && is_array( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] ) ) {
 			foreach ( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] as &$endpoint ) {
-				$endpoint['permission_callback'] = static fn() => current_user_can( 'manage_options' );
+				if ( is_array( $endpoint ) ) {
+					$endpoint['permission_callback'] = static fn() => current_user_can( 'manage_options' );
+				}
 			}
 		}
 		return $endpoints;

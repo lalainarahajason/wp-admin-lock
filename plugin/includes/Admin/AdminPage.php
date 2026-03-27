@@ -100,18 +100,35 @@ class LBS_Admin_Page {
 			return;
 		}
 
+		$asset_file = LBS_PLUGIN_DIR . 'build/index.asset.php';
+		if ( file_exists( $asset_file ) ) {
+			$asset        = require $asset_file;
+			$dependencies = $asset['dependencies'];
+			$version      = $asset['version'];
+		} else {
+			$dependencies = array( 'wp-element', 'wp-components', 'wp-i18n', 'wp-api-fetch' );
+			$version      = LBS_VERSION;
+		}
+
+		wp_enqueue_style(
+			'lebo-secu-admin-components',
+			wp_styles()->base_url . '/wp-includes/css/dist/components/style.min.css',
+			array(),
+			$version
+		);
+
 		wp_enqueue_style(
 			'lebo-secu-admin',
-			LBS_PLUGIN_URL . 'assets/css/admin.css',
-			array(),
-			LBS_VERSION
+			LBS_PLUGIN_URL . 'build/style-index.css',
+			array( 'lebo-secu-admin-components' ),
+			$version
 		);
 
 		wp_enqueue_script(
 			'lebo-secu-admin',
-			LBS_PLUGIN_URL . 'assets/js/admin.js',
-			array( 'wp-api' ),
-			LBS_VERSION,
+			LBS_PLUGIN_URL . 'build/index.js',
+			$dependencies,
+			$version,
 			true
 		);
 

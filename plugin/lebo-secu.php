@@ -38,6 +38,7 @@ require_once LBS_PLUGIN_DIR . 'includes/LBS_Feature_Interface.php';
 require_once LBS_PLUGIN_DIR . 'includes/Config/Migrator.php';
 require_once LBS_PLUGIN_DIR . 'includes/Helpers.php';
 require_once LBS_PLUGIN_DIR . 'includes/Database.php';
+require_once LBS_PLUGIN_DIR . 'includes/Admin/AdminApi.php';
 require_once LBS_PLUGIN_DIR . 'includes/Admin/AdminPage.php';
 
 // ── Features ─────────────────────────────────────────────────────────────────
@@ -88,5 +89,6 @@ add_action(
 		if ( is_admin() ) {
 			( new LBS_Admin_Page( $config ) )->init();
 		}
+		( new LBS_Admin_Api() )->init();
 	}
 );
