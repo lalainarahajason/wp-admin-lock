@@ -84,7 +84,8 @@ class LBS_Helpers {
 					'slug'    => 'wp-securite',
 				),
 				'hide_version'     => array(
-					'enabled' => true,
+					'enabled'       => true,
+					'hide_in_admin' => false,
 				),
 				'htaccess'         => array(
 					'enabled' => false,

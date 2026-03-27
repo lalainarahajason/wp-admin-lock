@@ -1,5 +1,5 @@
 import { useState, useEffect } from '@wordpress/element';
-import { Panel, PanelBody, PanelRow, ToggleControl, Button, Notice, Spinner } from '@wordpress/components';
+import { Panel, PanelBody, PanelRow, ToggleControl, Button, Notice, Spinner, CheckboxControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { fetchConfig, saveConfig, LbsConfig } from '../api';
 
@@ -160,7 +160,22 @@ const SettingsPage = () => {
                                         </div>
                                     </div>
                                 )}
-
+                                {featureId === 'hide_version' && featureConfig.enabled && (
+                                    <div style={{ marginTop: '10px', padding: '10px', background: '#f8f9fa', borderRadius: '4px', border: '1px solid #e2e4e7' }}>
+                                        <CheckboxControl
+                                            label={__('Masquer également dans l\'espace d\'administration', 'lebo-secu')}
+                                            checked={featureConfig.hide_in_admin || false}
+                                            onChange={(val) => {
+                                                const newConfig = { ...config };
+                                                newConfig.features[featureId].hide_in_admin = val;
+                                                setConfig(newConfig);
+                                            }}
+                                        />
+                                        <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#666' }}>
+                                            {__('Cochez cette option pour étendre le masquage de la version à /wp-admin. (Peut casser la purge cache de certains constructeurs de pages)', 'lebo-secu')}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     );

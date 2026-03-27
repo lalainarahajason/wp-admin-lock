@@ -40,6 +40,13 @@ class LBS_HideVersion implements LBS_Feature_Interface {
 	 * @return string
 	 */
 	public function remove_version_query( string $src ): string {
+		$hide_in_admin = ! empty( $this->config['hide_in_admin'] );
+
+		// Si on est dans l'admin et que l'option n'est pas activée, on préserve la version.
+		if ( is_admin() && ! $hide_in_admin ) {
+			return $src;
+		}
+
 		if ( str_contains( $src, 'ver=' ) ) {
 			$src = remove_query_arg( 'ver', $src );
 		}
