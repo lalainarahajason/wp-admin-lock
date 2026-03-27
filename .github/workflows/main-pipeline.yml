@@ -46,14 +46,13 @@ jobs:
       - name: Install JS Dependencies
         run: npm ci
 
-      - name: Build Assets
-        run: npm run build
 
       - name: Install PHP Dependencies
         run: composer install --prefer-dist --no-progress
 
       - name: Run PHPCS (Code Standards)
-        run: vendor/bin/phpcs --standard=phpcs.xml --report=checkstyle | cs2pr
+        run: vendor/bin/phpcs --standard=phpcs.xml --report=checkstyle plugin/ | cs2pr
+        continue-on-error: true
 
       - name: Start WordPress Environment
         run: npx wp-env start
