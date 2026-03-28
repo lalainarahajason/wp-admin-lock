@@ -54,6 +54,30 @@ class LBS_Admin_Api {
 
 		register_rest_route(
 			'lebo-secu/v1',
+			'/logs/export',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'export_csv_logs' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			'lebo-secu/v1',
+			'/logs/ban',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'quick_ban_ip' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			'lebo-secu/v1',
 			'/htaccess',
 			array(
 				array(
@@ -106,8 +130,16 @@ class LBS_Admin_Api {
 			return new WP_REST_Response( array( 'message' => 'Invalid data' ), 400 );
 		}
 
+		$old_config = LBS_Helpers::get_config();
 		update_option( 'lebosecu_config', $params, false );
 
+		LBS_AuditLog::log( 
+			LBS_AuditLog::EVENT_CONFIG_UPDATED, 
+			LBS_AuditLog::SEVERITY_INFO, 
+			array( 
+				'source' => 'rest_api'
+			) 
+		);
 		// Synchronisation active du .htaccess avec la nouvelle config globale
 		$htaccess_config = $params['features']['htaccess'] ?? array();
 		$manager = new LBS_HtaccessManager( $params );
@@ -131,7 +163,7 @@ class LBS_Admin_Api {
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'lebosecu_logs';
 
-		// On vérifie que la table existe
+		// On vérifie que la table existe.
 		if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $wpdb->esc_like( $table_name ) ) ) !== $table_name ) {
 			return new WP_REST_Response( array( 'logs' => array() ), 200 );
 		}
@@ -144,7 +176,7 @@ class LBS_Admin_Api {
 			$wpdb->prepare(
 				"SELECT l.*, u.user_login 
 				 FROM {$table_name} l 
-				 LEFT JOIN {$wpdb->users} u ON l.user_id = u.ID 
+				 LEFT JOIN {$wpdb->users} u ON l.actor_id = u.ID 
 				 ORDER BY l.created_at DESC LIMIT %d OFFSET %d",
 				$per_page,
 				$offset
@@ -154,6 +186,88 @@ class LBS_Admin_Api {
 
 		return new WP_REST_Response( array( 'logs' => $results ?: array() ), 200 );
 	}
+
+	/**
+	 * Exporte les logs en CSV.
+	 *
+	 * @param WP_REST_Request $request
+	 */
+	public function export_csv_logs( WP_REST_Request $request ): void {
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'lebosecu_logs';
+
+		$results = $wpdb->get_results(
+			"SELECT l.*, u.user_login 
+			 FROM {$table_name} l 
+			 LEFT JOIN {$wpdb->users} u ON l.actor_id = u.ID 
+			 ORDER BY l.created_at DESC LIMIT 1000",
+			ARRAY_A
+		);
+
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename=lebo-secu-logs-' . gmdate( 'Y-m-d' ) . '.csv' );
+
+		$output = fopen( 'php://output', 'w' );
+		fputcsv( $output, array( 'ID', 'Date', 'Code', 'Severité', 'Utilisateur', 'IP', 'User Agent', 'URL', 'Détails' ) );
+
+		if ( ! empty( $results ) ) {
+			foreach ( $results as $row ) {
+				fputcsv( $output, array(
+					$row['id'],
+					$row['created_at'],
+					$row['event_code'],
+					$row['severity'],
+					$row['user_login'] ?: ( $row['actor_id'] ?: 'Anonyme' ),
+					$row['actor_ip'],
+					$row['user_agent'],
+					$row['request_url'],
+					$row['metadata'],
+				) );
+			}
+		}
+		fclose( $output );
+		exit;
+	}
+
+	/**
+	 * Bannit rapidement une IP.
+	 *
+	 * @param WP_REST_Request $request
+	 * @return WP_REST_Response
+	 */
+	public function quick_ban_ip( WP_REST_Request $request ): WP_REST_Response {
+		$ip = sanitize_text_field( $request->get_param( 'ip' ) );
+
+		if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+			return new WP_REST_Response( array( 'message' => 'IP invalide' ), 400 );
+		}
+
+		// Utilisation du même mécanisme que LoginProtection (transient).
+		$key      = 'lbs_lock_' . substr( md5( $ip ), 0, 16 );
+		$duration = 86400 * 7; // Bannissement de 7 jours par défaut via Quick Ban.
+
+		set_transient(
+			$key,
+			array(
+				'ip'        => $ip,
+				'locked_at' => time(),
+				'username'  => 'manual_ban',
+			),
+			$duration
+		);
+
+		LBS_AuditLog::log( 
+			LBS_AuditLog::EVENT_AUTH_LOCKOUT, 
+			LBS_AuditLog::SEVERITY_CRITICAL, 
+			array( 
+				'ip'     => $ip, 
+				'reason' => 'manual_quick_ban'
+			) 
+		);
+
+		return new WP_REST_Response( array( 'message' => 'IP bannie pour 7 jours' ), 200 );
+	}
+
 	/**
 	 * Récupère le contenu actuel du .htaccess.
 	 *

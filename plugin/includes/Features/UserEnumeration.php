@@ -38,6 +38,7 @@ class LBS_UserEnumeration implements LBS_Feature_Interface {
 		$author = sanitize_text_field( wp_unslash( $_GET['author'] ?? '' ) );
 
 		if ( '' !== $author ) {
+			LBS_AuditLog::log( LBS_AuditLog::EVENT_ENUMERATION_BLOCKED, LBS_AuditLog::SEVERITY_WARNING, array( 'author' => $author ) );
 			wp_safe_redirect( home_url( '/' ), 301 );
 			exit;
 		}

@@ -61,6 +61,8 @@ class LBS_RestApiProtection implements LBS_Feature_Interface {
 			}
 		}
 
+		LBS_AuditLog::log( LBS_AuditLog::EVENT_REST_DENIED, LBS_AuditLog::SEVERITY_WARNING, array( 'endpoint' => $request_path ) );
+
 		return new WP_Error(
 			'rest_not_logged_in',
 			__( 'API REST restreinte. Authentification requise.', 'lebo-secu' ),

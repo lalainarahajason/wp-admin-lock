@@ -28,16 +28,19 @@ class LBS_Database {
 
 		$sql = "CREATE TABLE {$table_name} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			event_type varchar(50) NOT NULL,
-			user_id bigint(20) unsigned NULL DEFAULT NULL,
-			ip_address varchar(45) NOT NULL DEFAULT '',
-			user_agent text NULL DEFAULT NULL,
-			details json NULL DEFAULT NULL,
 			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			event_code varchar(50) NOT NULL,
+			severity varchar(20) NOT NULL DEFAULT 'INFO',
+			actor_id bigint(20) unsigned NULL DEFAULT 0,
+			actor_ip varchar(45) NOT NULL DEFAULT '',
+			user_agent text NULL DEFAULT NULL,
+			request_url text NULL DEFAULT NULL,
+			metadata longtext NULL DEFAULT NULL,
 			PRIMARY KEY (id),
-			KEY event_type (event_type),
+			KEY event_code (event_code),
 			KEY created_at (created_at),
-			KEY ip_address (ip_address)
+			KEY actor_ip (actor_ip),
+			KEY severity (severity)
 		) {$charset_collate};";
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';

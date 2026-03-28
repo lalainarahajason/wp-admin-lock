@@ -36,6 +36,29 @@ export const fetchAuditLogs = async (page = 1, perPage = 20): Promise<any> => {
 };
 
 /**
+ * Bannit une IP via Quick Ban.
+ */
+export const quickBanIp = async (ip: string): Promise<any> => {
+    return apiFetch({
+        path: '/lebo-secu/v1/logs/ban',
+        method: 'POST',
+        data: { ip },
+    });
+};
+
+/**
+ * Retourne l'URL pour l'export CSV.
+ */
+export const getAuditLogExportUrl = (): string => {
+    // @ts-ignore
+    const root = window.wpApiSettings.root;
+    // @ts-ignore
+    const nonce = window.wpApiSettings.nonce;
+    return `${root}lebo-secu/v1/logs/export?_wpnonce=${nonce}`;
+};
+
+
+/**
  * Récupère le contenu actuel du fichier .htaccess.
  */
 export const fetchHtaccess = async (): Promise<{ content: string; error?: string }> => {
