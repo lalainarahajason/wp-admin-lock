@@ -127,7 +127,7 @@ class LBS_Admin_Page {
 		wp_enqueue_script(
 			'lebo-secu-admin',
 			LBS_PLUGIN_URL . 'build/index.js',
-			$dependencies,
+			array_merge( $dependencies, array( 'wp-api' ) ),
 			$version,
 			true
 		);

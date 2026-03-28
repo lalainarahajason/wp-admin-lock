@@ -51,11 +51,16 @@ export const quickBanIp = async (ip: string): Promise<any> => {
  */
 export const getAuditLogExportUrl = (): string => {
     // @ts-ignore
-    const root = window.wpApiSettings.root;
+    const root = window.wpApiSettings?.root || (window.lbsAdmin?.restUrl ? window.lbsAdmin.restUrl.replace('lebo-secu/v1', '') : '/wp-json/');
     // @ts-ignore
-    const nonce = window.wpApiSettings.nonce;
-    return `${root}lebo-secu/v1/logs/export?_wpnonce=${nonce}`;
+    const nonce = window.wpApiSettings?.nonce || window.lbsAdmin?.nonce || '';
+    
+    // Ensure root ends with slash
+    const normalizedRoot = root.endsWith('/') ? root : `${root}/`;
+    
+    return `${normalizedRoot}lebo-secu/v1/logs/export?_wpnonce=${nonce}`;
 };
+
 
 
 /**
