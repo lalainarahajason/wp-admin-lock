@@ -1,0 +1,12 @@
+{
+  "extends": "@wordpress/scripts/config/tsconfig.json",
+  "compilerOptions": {
+    "outDir": "plugin/build",
+    "rootDir": "src",
+    "jsx": "react-jsx",
+    "esModuleInterop": true
+  },
+  "include": [
+    "src/**/*"
+  ]
+}
