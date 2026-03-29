@@ -73,6 +73,23 @@ class LBS_Admin_Api {
 					'callback'            => array( $this, 'quick_ban_ip' ),
 					'permission_callback' => array( $this, 'check_permission' ),
 				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'unban_ip' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			'lebo-secu/v1',
+			'/logs/banned',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_banned_ips' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				),
 			)
 		);
 
@@ -285,6 +302,44 @@ class LBS_Admin_Api {
 		);
 
 		return new WP_REST_Response( array( 'message' => 'IP bannie pour 7 jours' ), 200 );
+	}
+
+	/**
+	 * Débannit une IP.
+	 *
+	 * @param WP_REST_Request $request
+	 * @return WP_REST_Response
+	 */
+	public function unban_ip( WP_REST_Request $request ): WP_REST_Response {
+		$ip = sanitize_text_field( $request->get_param( 'ip' ) );
+
+		if ( ! $ip ) {
+			return new WP_REST_Response( array( 'message' => 'IP manquante' ), 400 );
+		}
+
+		$config = LBS_Helpers::get_config();
+		$protection = new LBS_LoginProtection( $config );
+		$protection->unlock_ip( $ip );
+
+		return new WP_REST_Response( array( 'message' => 'IP débloquée' ), 200 );
+	}
+
+	/**
+	 * Récupère la liste des IPs actuellement bannies.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function get_banned_ips(): WP_REST_Response {
+		$config = LBS_Helpers::get_config();
+		$protection = new LBS_LoginProtection( $config );
+		$locked = $protection->get_locked_ips();
+
+		// On n'extrait que les IPs pour simplifier le check côté JS.
+		$ips = array_map( function( $item ) {
+			return $item['ip'] ?? '';
+		}, $locked );
+
+		return new WP_REST_Response( array( 'banned' => array_filter( $ips ) ), 200 );
 	}
 
 	/**

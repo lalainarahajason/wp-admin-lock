@@ -1,13 +1,14 @@
 import { useState, useEffect } from '@wordpress/element';
 import { Spinner, Button, Dashicon, Tooltip } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
-import { fetchAuditLogs, quickBanIp, getAuditLogExportUrl } from '../api';
+import { fetchAuditLogs, quickBanIp, unbanIp, fetchBannedIps, getAuditLogExportUrl } from '../api';
 
 const AuditLogPage = () => {
     const [logs, setLogs] = useState<any[]>([]);
+    const [bannedIps, setBannedIps] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [page, setPage] = useState(1);
-    const [isBanning, setIsBanning] = useState<string | null>(null);
+    const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
     const loadLogs = (p: number) => {
         setIsLoading(true);
@@ -20,21 +21,42 @@ const AuditLogPage = () => {
         });
     };
 
+    const loadBannedIps = () => {
+        fetchBannedIps().then((res) => {
+            setBannedIps(res.banned || []);
+        });
+    };
+
     useEffect(() => {
         loadLogs(page);
+        loadBannedIps();
     }, [page]);
 
     const handleQuickBan = (ip: string) => {
         if (!confirm(__('Voulez-vous vraiment bannir cette IP pour 7 jours ?', 'lebo-secu'))) return;
         
-        setIsBanning(ip);
+        setIsProcessing(ip);
         quickBanIp(ip).then(() => {
-            alert(__('IP bannie avec succès.', 'lebo-secu'));
             loadLogs(page);
+            loadBannedIps();
         }).catch((err) => {
             alert(err.message || __('Erreur lors du bannissement.', 'lebo-secu'));
         }).finally(() => {
-            setIsBanning(null);
+            setIsProcessing(null);
+        });
+    };
+
+    const handleUnban = (ip: string) => {
+        if (!confirm(__('Voulez-vous vraiment ré-autoriser cette IP ?', 'lebo-secu'))) return;
+        
+        setIsProcessing(ip);
+        unbanIp(ip).then(() => {
+            loadLogs(page);
+            loadBannedIps();
+        }).catch((err) => {
+            alert(err.message || __('Erreur lors du déblocage.', 'lebo-secu'));
+        }).finally(() => {
+            setIsProcessing(null);
         });
     };
 
@@ -52,7 +74,6 @@ const AuditLogPage = () => {
         try {
             const meta = typeof metadata === 'string' ? JSON.parse(metadata) : metadata;
             
-            // Cas spécial pour CONFIG_UPDATED avec diff
             if (meta.changes && typeof meta.changes === 'object') {
                 return (
                     <div className="lbs-log-details" style={{ marginTop: '4px' }}>
@@ -105,7 +126,7 @@ const AuditLogPage = () => {
                         <th style={{ width: '120px' }}>{__('Utilisateur', 'lebo-secu')}</th>
                         <th style={{ width: '130px' }}>{__('IP', 'lebo-secu')}</th>
                         <th>{__('Détails', 'lebo-secu')}</th>
-                        <th style={{ width: '70px' }}>{__('Actions', 'lebo-secu')}</th>
+                        <th style={{ width: '110px' }}>{__('Actions', 'lebo-secu')}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -116,6 +137,8 @@ const AuditLogPage = () => {
                     ) : (
                         logs.map((log: any) => {
                             const styles = getSeverityStyles(log.severity);
+                            const isBanned = bannedIps.includes(log.actor_ip);
+                            
                             return (
                                 <tr key={log.id}>
                                     <td>{log.created_at}</td>
@@ -146,24 +169,60 @@ const AuditLogPage = () => {
                                                     <strong>URL:</strong> <code style={{ fontSize: '10px' }}>{log.request_url}</code>
                                                 </div>
                                             )}
-                                            {log.user_agent && (
-                                                <div style={{ marginTop: '2px', fontSize: '9px', fontStyle: 'italic', opacity: 0.6 }}>
-                                                    UA: {log.user_agent}
-                                                </div>
-                                            )}
                                         </div>
                                     </td>
-                                    <td>
-                                        <Tooltip text={__('Bannir cette IP (7 jours)', 'lebo-secu')}>
+                                    <td style={{ verticalAlign: 'middle' }}>
+                                        {isProcessing === log.actor_ip ? (
+                                            <Spinner />
+                                        ) : isBanned ? (
                                             <Button 
-                                                isDestructive 
-                                                variant="link"
-                                                onClick={() => handleQuickBan(log.actor_ip)}
-                                                disabled={isBanning === log.actor_ip}
+                                                variant="secondary"
+                                                onClick={() => handleUnban(log.actor_ip)}
+                                                style={{ 
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    backgroundColor: '#e7f6ed', 
+                                                    color: '#008a20', 
+                                                    borderColor: '#00a32a',
+                                                    fontSize: '11px',
+                                                    height: '24px',
+                                                    lineHeight: '22px'
+                                                }}
                                             >
-                                                {isBanning === log.actor_ip ? <Spinner /> : <Dashicon icon="shield-alt" />}
+                                                <span style={{ 
+                                                    display: 'inline-block', 
+                                                    width: '8px', 
+                                                    height: '8px', 
+                                                    borderRadius: '50%', 
+                                                    backgroundColor: '#00a32a' 
+                                                }}></span>
+                                                {__('Ré-autoriser', 'lebo-secu')}
                                             </Button>
-                                        </Tooltip>
+                                        ) : (
+                                            <Button 
+                                                variant="secondary"
+                                                onClick={() => handleQuickBan(log.actor_ip)}
+                                                style={{ 
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    backgroundColor: '#f6f7f7',
+                                                    fontSize: '11px',
+                                                    height: '24px',
+                                                    lineHeight: '22px'
+                                                }}
+                                            >
+                                                <span style={{ 
+                                                    display: 'inline-block', 
+                                                    width: '8px', 
+                                                    height: '8px', 
+                                                    borderRadius: '50%', 
+                                                    backgroundColor: '#d63638' 
+                                                }}></span>
+                                                {__('Bloquer l\'IP', 'lebo-secu')}
+                                            </Button>
+                                        )}
                                     </td>
                                 </tr>
                             );
