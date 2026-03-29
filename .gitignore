@@ -6,6 +6,8 @@ wp-content/cache/
 wp-content/debug.log
 
 # Plugin — dépendances
+vendor/
+composer.lock
 plugin/vendor/
 node_modules/
 

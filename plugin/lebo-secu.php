@@ -35,6 +35,7 @@ define( 'LBS_PLUGIN_FILE', __FILE__ );
 
 // ── Chargement des classes core ──────────────────────────────────────────────
 require_once LBS_PLUGIN_DIR . 'includes/LBS_Feature_Interface.php';
+require_once LBS_PLUGIN_DIR . 'includes/LBS_EventCodes.php';
 require_once LBS_PLUGIN_DIR . 'includes/Config/Migrator.php';
 require_once LBS_PLUGIN_DIR . 'includes/Helpers.php';
 require_once LBS_PLUGIN_DIR . 'includes/Database.php';

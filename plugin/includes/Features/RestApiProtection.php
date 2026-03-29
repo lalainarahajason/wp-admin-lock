@@ -44,16 +44,16 @@ class LBS_RestApiProtection implements LBS_Feature_Interface {
 		}
 
 		// Vérifier whitelist IPs.
-		$client_ip      = $this->get_client_ip();
-		$whitelist_ips  = $this->config['whitelist_ips'] ?? array();
+		$client_ip     = $this->get_client_ip();
+		$whitelist_ips = $this->config['whitelist_ips'] ?? array();
 
 		if ( in_array( $client_ip, $whitelist_ips, true ) ) {
 			return $result;
 		}
 
 		// Vérifier whitelist endpoints.
-		$request_path         = $GLOBALS['wp']->query_vars['rest_route'] ?? '';
-		$whitelist_endpoints  = $this->config['whitelist_endpoints'] ?? array();
+		$request_path        = $GLOBALS['wp']->query_vars['rest_route'] ?? '';
+		$whitelist_endpoints = $this->config['whitelist_endpoints'] ?? array();
 
 		foreach ( $whitelist_endpoints as $endpoint ) {
 			if ( str_starts_with( $request_path, $endpoint ) ) {
@@ -61,7 +61,7 @@ class LBS_RestApiProtection implements LBS_Feature_Interface {
 			}
 		}
 
-		LBS_AuditLog::log( LBS_AuditLog::EVENT_REST_DENIED, LBS_AuditLog::SEVERITY_WARNING, array( 'endpoint' => $request_path ) );
+		LBS_AuditLog::log( LBS_EventCodes::SECURITY_REST_DENIED, LBS_EventCodes::SEVERITY_WARNING, array( 'endpoint' => $request_path ) );
 
 		return new WP_Error(
 			'rest_not_logged_in',

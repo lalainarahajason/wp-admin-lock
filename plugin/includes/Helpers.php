@@ -108,8 +108,8 @@ class LBS_Helpers {
 					'enabled' => true,
 				),
 				'security_headers' => array(
-					'enabled'  => true,
-					'headers'  => array(
+					'enabled'        => true,
+					'headers'        => array(
 						'x_frame_options'    => array(
 							'enabled' => true,
 							'value'   => 'SAMEORIGIN',

@@ -59,7 +59,7 @@ class LBS_Database {
 		global $wpdb;
 
 		// Vérifier si la table existe.
-		$table_exists = $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $wpdb->esc_like( $table_name ) ) );
+		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table_name ) ) );
 		if ( ! $table_exists ) {
 			return;
 		}
