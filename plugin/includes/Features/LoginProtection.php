@@ -101,6 +101,15 @@ class LBS_LoginProtection implements LBS_Feature_Interface {
 				$duration
 			);
 
+			LBS_AuditLog::log( 
+				LBS_AuditLog::EVENT_AUTH_LOCKOUT, 
+				LBS_AuditLog::SEVERITY_CRITICAL, 
+				array( 
+					'username'     => sanitize_user( $username ), 
+					'duration_sec' => $duration 
+				) 
+			);
+
 			if ( ! empty( $this->config['email_notify'] ) ) {
 				$this->send_lockout_notification( $ip, $username );
 			}

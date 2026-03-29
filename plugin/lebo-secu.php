@@ -78,6 +78,9 @@ add_action(
 	static function (): void {
 		load_plugin_textdomain( 'lebo-secu', false, dirname( plugin_basename( LBS_PLUGIN_FILE ) ) . '/languages' );
 
+		// S'assurer que les tables sont à jour (migration silencieuse)
+		LBS_Database::create_tables();
+
 		$config = LBS_Helpers::get_config();
 
 		foreach ( LBS_Helpers::get_feature_classes() as $class ) {

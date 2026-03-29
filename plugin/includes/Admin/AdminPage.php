@@ -47,26 +47,17 @@ class LBS_Admin_Page {
 			esc_html__( 'Lebo Secu', 'lebo-secu' ),
 			'manage_options',
 			'lebo-secu',
-			array( $this, 'render_dashboard' ),
+			array( $this, 'render_settings' ),
 			'dashicons-shield',
 			80
 		);
 
 		add_submenu_page(
 			'lebo-secu',
-			esc_html__( 'Tableau de bord', 'lebo-secu' ),
-			esc_html__( 'Tableau de bord', 'lebo-secu' ),
-			'manage_options',
-			'lebo-secu',
-			array( $this, 'render_dashboard' )
-		);
-
-		add_submenu_page(
-			'lebo-secu',
 			esc_html__( 'Paramètres', 'lebo-secu' ),
 			esc_html__( 'Paramètres', 'lebo-secu' ),
 			'manage_options',
-			'lebo-secu-settings',
+			'lebo-secu',
 			array( $this, 'render_settings' )
 		);
 
@@ -86,6 +77,15 @@ class LBS_Admin_Page {
 			'manage_options',
 			'lebo-secu-audit',
 			array( $this, 'render_audit_log' )
+		);
+
+		add_submenu_page(
+			'lebo-secu',
+			esc_html__( 'Fichier .htaccess', 'lebo-secu' ),
+			esc_html__( 'Fichier .htaccess', 'lebo-secu' ),
+			'manage_options',
+			'lebo-secu-htaccess',
+			array( $this, 'render_htaccess' )
 		);
 	}
 
@@ -127,7 +127,7 @@ class LBS_Admin_Page {
 		wp_enqueue_script(
 			'lebo-secu-admin',
 			LBS_PLUGIN_URL . 'build/index.js',
-			$dependencies,
+			array_merge( $dependencies, array( 'wp-api' ) ),
 			$version,
 			true
 		);
@@ -142,39 +142,6 @@ class LBS_Admin_Page {
 				'version' => LBS_VERSION,
 			)
 		);
-	}
-
-	/**
-	 * Rendu du tableau de bord.
-	 *
-	 * @return void
-	 */
-	public function render_dashboard(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		$score    = $this->calculate_security_score();
-		$features = $this->config['features'] ?? array();
-		?>
-		<div class="wrap lbs-wrap">
-			<h1><?php esc_html_e( 'Lebo Secu — Tableau de bord', 'lebo-secu' ); ?></h1>
-
-			<div class="lbs-score-card">
-				<div class="lbs-score-value"><?php echo esc_html( $score ); ?>/10</div>
-				<div class="lbs-score-label"><?php esc_html_e( 'Score de sécurité', 'lebo-secu' ); ?></div>
-			</div>
-
-			<div class="lbs-features-grid">
-				<?php foreach ( $features as $id => $feature ) : ?>
-				<div class="lbs-feature-card <?php echo ( $feature['enabled'] ?? false ) ? 'lbs-active' : 'lbs-inactive'; ?>">
-					<span class="lbs-feature-status dashicons <?php echo ( $feature['enabled'] ?? false ) ? 'dashicons-yes-alt' : 'dashicons-dismiss'; ?>"></span>
-					<span class="lbs-feature-name"><?php echo esc_html( $id ); ?></span>
-				</div>
-				<?php endforeach; ?>
-			</div>
-		</div>
-		<?php
 	}
 
 	/**
@@ -230,33 +197,20 @@ class LBS_Admin_Page {
 	}
 
 	/**
-	 * Calculer le score de sécurité sur 10 basé sur les features critiques actives.
+	 * Rendu de l'éditeur .htaccess.
 	 *
-	 * @return int Score entre 0 et 10.
+	 * @return void
 	 */
-	private function calculate_security_score(): int {
-		$critical_features = array(
-			'hide_version',
-			'admin_url',
-			'login_protection',
-			'user_enumeration',
-			'rest_api',
-			'security_headers',
-			'disable_features',
-			'htaccess',
-			'audit_log',
-		);
-
-		$score    = 0;
-		$features = $this->config['features'] ?? array();
-
-		foreach ( $critical_features as $feature ) {
-			if ( ! empty( $features[ $feature ]['enabled'] ) ) {
-				++$score;
-			}
+	public function render_htaccess(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
 		}
-
-		// Arrondi sur 10.
-		return (int) round( ( $score / count( $critical_features ) ) * 10 );
+		?>
+		<div class="wrap lbs-wrap">
+			<h1><?php esc_html_e( 'Lebo Secu — Éditeur .htaccess', 'lebo-secu' ); ?></h1>
+			<div id="lbs-htaccess-app"></div>
+		</div>
+		<?php
 	}
+
 }

@@ -60,6 +60,7 @@ class LBS_AdminUrl implements LBS_Feature_Interface {
 		$stored_token   = get_option( 'lbs_recovery_token', '' );
 
 		if ( $stored_token && hash_equals( $stored_token, $token_from_url ) ) {
+			LBS_AuditLog::log( LBS_AuditLog::EVENT_AUTH_RECOVERY_TOKEN_USED, LBS_AuditLog::SEVERITY_CRITICAL );
 			update_option( 'lbs_recovery_token', bin2hex( random_bytes( 32 ) ), false );
 			return;
 		}
