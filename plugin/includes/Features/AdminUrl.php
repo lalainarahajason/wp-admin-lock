@@ -48,19 +48,27 @@ class LBS_AdminUrl implements LBS_Feature_Interface {
 	 */
 	public function intercept_request(): void {
 		// 1. Cron, AJAX, autosave → laisser passer.
-		if ( defined( 'DOING_CRON' ) && DOING_CRON ) return;
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) return;
-		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
+		if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+			return;
+		}
+		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+			return;
+		}
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
 
 		// 2. Constante de désactivation d'urgence → laisser passer.
-		if ( defined( 'LBS_DISABLE_CUSTOM_URL' ) && LBS_DISABLE_CUSTOM_URL ) return;
+		if ( defined( 'LBS_DISABLE_CUSTOM_URL' ) && LBS_DISABLE_CUSTOM_URL ) {
+			return;
+		}
 
 		// 3. Token de récupération valide → laisser passer + invalider.
 		$token_from_url = sanitize_text_field( wp_unslash( $_GET['lbs_recover'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$stored_token   = get_option( 'lbs_recovery_token', '' );
 
 		if ( $stored_token && hash_equals( $stored_token, $token_from_url ) ) {
-			LBS_AuditLog::log( LBS_AuditLog::EVENT_AUTH_RECOVERY_TOKEN_USED, LBS_AuditLog::SEVERITY_CRITICAL );
+			LBS_AuditLog::log( LBS_EventCodes::AUTH_RECOVERY_TOKEN_USED, LBS_EventCodes::SEVERITY_CRITICAL );
 			update_option( 'lbs_recovery_token', bin2hex( random_bytes( 32 ) ), false );
 			return;
 		}
@@ -69,7 +77,9 @@ class LBS_AdminUrl implements LBS_Feature_Interface {
 		$path        = (string) parse_url( $request_uri, PHP_URL_PATH );
 
 		// 4. admin-ajax.php ou async-upload.php → laisser passer.
-		if ( str_ends_with( $path, 'admin-ajax.php' ) || str_ends_with( $path, 'async-upload.php' ) ) return;
+		if ( str_ends_with( $path, 'admin-ajax.php' ) || str_ends_with( $path, 'async-upload.php' ) ) {
+			return;
+		}
 
 		$slug = sanitize_title( $this->config['slug'] ?? '' );
 
@@ -99,10 +109,10 @@ class LBS_AdminUrl implements LBS_Feature_Interface {
 	/**
 	 * Réécrire les URLs wp-login.php générées par WordPress.
 	 *
-	 * @param string      $url     URL générée.
-	 * @param string      $path    Chemin relatif.
-	 * @param string      $scheme  Schéma (https, http, login).
-	 * @param int|null    $blog_id Blog ID (multisite).
+	 * @param string   $url     URL générée.
+	 * @param string   $path    Chemin relatif.
+	 * @param string   $scheme  Schéma (https, http, login).
+	 * @param int|null $blog_id Blog ID (multisite).
 	 * @return string
 	 */
 	public function rewrite_login_url( string $url, string $path, ?string $scheme = null, ?int $blog_id = null ): string {
@@ -138,13 +148,19 @@ class LBS_AdminUrl implements LBS_Feature_Interface {
 	 * @return void
 	 */
 	public function maybe_show_recovery_token_notice(): void {
-		if ( ! current_user_can( 'manage_options' ) ) return;
-		if ( ! get_option( 'lbs_show_recovery_notice' ) ) return;
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		if ( ! get_option( 'lbs_show_recovery_notice' ) ) {
+			return;
+		}
 
 		$token = get_option( 'lbs_recovery_token', '' );
 		delete_option( 'lbs_show_recovery_notice' );
 
-		if ( ! $token ) return;
+		if ( ! $token ) {
+			return;
+		}
 		?>
 		<div class="notice notice-warning lbs-notice-token">
 			<p>

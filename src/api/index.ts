@@ -36,6 +36,13 @@ export const fetchAuditLogs = async (page = 1, perPage = 20): Promise<any> => {
 };
 
 /**
+ * Récupère la liste des IPs bannies.
+ */
+export const fetchBannedIps = async (): Promise<{ banned: string[] }> => {
+    return apiFetch({ path: '/lebo-secu/v1/logs/banned' });
+};
+
+/**
  * Bannit une IP via Quick Ban.
  */
 export const quickBanIp = async (ip: string): Promise<any> => {
@@ -43,6 +50,16 @@ export const quickBanIp = async (ip: string): Promise<any> => {
         path: '/lebo-secu/v1/logs/ban',
         method: 'POST',
         data: { ip },
+    });
+};
+
+/**
+ * Débannit une IP.
+ */
+export const unbanIp = async (ip: string): Promise<any> => {
+    return apiFetch({
+        path: `/lebo-secu/v1/logs/ban?ip=${ip}`,
+        method: 'DELETE',
     });
 };
 

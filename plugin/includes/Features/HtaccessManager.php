@@ -91,6 +91,12 @@ class LBS_HtaccessManager implements LBS_Feature_Interface {
 			return new WP_Error( 'htaccess_write_failed', __( 'Impossible d\'écrire dans .htaccess.', 'lebo-secu' ) );
 		}
 
+		LBS_AuditLog::log(
+			LBS_EventCodes::SYSTEM_HTACCESS_WRITTEN,
+			LBS_EventCodes::SEVERITY_INFO,
+			array( 'rules_length' => strlen( $rules ) )
+		);
+
 		return true;
 	}
 

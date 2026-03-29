@@ -14,25 +14,6 @@ defined( 'ABSPATH' ) || exit;
  */
 class LBS_AuditLog implements LBS_Feature_Interface {
 
-	// Sévérités
-	public const SEVERITY_INFO     = 'INFO';
-	public const SEVERITY_NOTICE   = 'NOTICE';
-	public const SEVERITY_WARNING  = 'WARNING';
-	public const SEVERITY_CRITICAL = 'CRITICAL';
-
-	// Codes d'événements
-	public const EVENT_AUTH_LOGIN_SUCCESS       = 'AUTH_LOGIN_SUCCESS';
-	public const EVENT_AUTH_LOGIN_FAILED        = 'AUTH_LOGIN_FAILED';
-	public const EVENT_AUTH_RECOVERY_TOKEN_USED = 'AUTH_RECOVERY_TOKEN_USED';
-	public const EVENT_AUTH_LOCKOUT             = 'AUTH_LOCKOUT';
-	public const EVENT_ENUMERATION_BLOCKED      = 'SECURITY_ENUMERATION_BLOCKED';
-	public const EVENT_REST_DENIED              = 'SECURITY_REST_DENIED';
-	public const EVENT_CONFIG_UPDATED           = 'CONFIG_UPDATED';
-	public const EVENT_CONFIG_IMPORTED          = 'CONFIG_IMPORTED';
-	public const EVENT_CONFIG_EXPORTED          = 'CONFIG_EXPORTED';
-	public const EVENT_HTACCESS_MODIFIED        = 'SYSTEM_HTACCESS_MODIFIED';
-
-
 	/** @var array<string, mixed> */
 	private array $config;
 
@@ -58,19 +39,19 @@ class LBS_AuditLog implements LBS_Feature_Interface {
 	/**
 	 * Journaliser un événement de sécurité.
 	 *
-	 * @param string                $event_code Code de l'événement (ex: AUTH_LOGIN_FAILED).
-	 * @param string                $severity   Niveau de sévérité (ex: INFO, CRITICAL).
-	 * @param array<string, mixed>  $metadata   Données contextuelles.
-	 * @param int|null              $actor_id   ID utilisateur (remplace get_current_user_id si besoin).
+	 * @param string               $event_code Code de l'événement (ex: AUTH_LOGIN_FAILED).
+	 * @param string               $severity   Niveau de sévérité (ex: INFO, CRITICAL).
+	 * @param array<string, mixed> $metadata   Données contextuelles.
+	 * @param int|null             $actor_id   ID utilisateur (remplace get_current_user_id si besoin).
 	 * @return void
 	 */
-	public static function log( string $event_code, string $severity = self::SEVERITY_INFO, array $metadata = array(), ?int $actor_id = null ): void {
+	public static function log( string $event_code, string $severity = LBS_EventCodes::SEVERITY_INFO, array $metadata = array(), ?int $actor_id = null ): void {
 		global $wpdb;
 
 		$ip          = self::get_real_ip();
 		$user_agent  = sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) );
 		$request_url = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) );
-		
+
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$user_id = $actor_id ?? get_current_user_id();
 
@@ -118,7 +99,7 @@ class LBS_AuditLog implements LBS_Feature_Interface {
 	 * @return void
 	 */
 	public function log_login_success( string $user_login, WP_User $user ): void {
-		self::log( self::EVENT_AUTH_LOGIN_SUCCESS, self::SEVERITY_INFO, array( 'username' => $user_login ), $user->ID );
+		self::log( LBS_EventCodes::AUTH_LOGIN_SUCCESS, LBS_EventCodes::SEVERITY_INFO, array( 'username' => $user_login ), $user->ID );
 	}
 
 	/**
@@ -128,7 +109,7 @@ class LBS_AuditLog implements LBS_Feature_Interface {
 	 * @return void
 	 */
 	public function log_login_failed( string $username ): void {
-		self::log( self::EVENT_AUTH_LOGIN_FAILED, self::SEVERITY_WARNING, array( 'username' => sanitize_user( $username ) ) );
+		self::log( LBS_EventCodes::AUTH_LOGIN_FAILED, LBS_EventCodes::SEVERITY_WARNING, array( 'username' => sanitize_user( $username ) ) );
 	}
 
 	/**

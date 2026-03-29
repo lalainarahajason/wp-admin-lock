@@ -212,5 +212,4 @@ class LBS_Admin_Page {
 		</div>
 		<?php
 	}
-
 }

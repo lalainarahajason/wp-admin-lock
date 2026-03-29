@@ -73,6 +73,23 @@ class LBS_Admin_Api {
 					'callback'            => array( $this, 'quick_ban_ip' ),
 					'permission_callback' => array( $this, 'check_permission' ),
 				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'unban_ip' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			'lebo-secu/v1',
+			'/logs/banned',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_banned_ips' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				),
 			)
 		);
 
@@ -131,19 +148,35 @@ class LBS_Admin_Api {
 		}
 
 		$old_config = LBS_Helpers::get_config();
+
+		// Calcul du diff pour le log.
+		$changes = array();
+		if ( isset( $params['features'] ) && is_array( $params['features'] ) ) {
+			foreach ( $params['features'] as $feature_key => $new_settings ) {
+				$old_settings = $old_config['features'][ $feature_key ] ?? null;
+				if ( $new_settings !== $old_settings ) {
+					$changes[ $feature_key ] = array(
+						'old' => $old_settings,
+						'new' => $new_settings,
+					);
+				}
+			}
+		}
+
 		update_option( 'lebosecu_config', $params, false );
 
-		LBS_AuditLog::log( 
-			LBS_AuditLog::EVENT_CONFIG_UPDATED, 
-			LBS_AuditLog::SEVERITY_INFO, 
-			array( 
-				'source' => 'rest_api'
-			) 
+		LBS_AuditLog::log(
+			LBS_EventCodes::CONFIG_UPDATED,
+			LBS_EventCodes::SEVERITY_INFO,
+			array(
+				'source'  => 'rest_api',
+				'changes' => $changes,
+			)
 		);
 		// Synchronisation active du .htaccess avec la nouvelle config globale
 		$htaccess_config = $params['features']['htaccess'] ?? array();
-		$manager = new LBS_HtaccessManager( $params );
-		
+		$manager         = new LBS_HtaccessManager( $params );
+
 		if ( ! empty( $htaccess_config['enabled'] ) && isset( $htaccess_config['rules'] ) ) {
 			$manager->write( (string) $htaccess_config['rules'] );
 		} else {
@@ -164,7 +197,7 @@ class LBS_Admin_Api {
 		$table_name = $wpdb->prefix . 'lebosecu_logs';
 
 		// On vérifie que la table existe.
-		if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $wpdb->esc_like( $table_name ) ) ) !== $table_name ) {
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table_name ) ) ) !== $table_name ) {
 			return new WP_REST_Response( array( 'logs' => array() ), 200 );
 		}
 
@@ -212,17 +245,20 @@ class LBS_Admin_Api {
 
 		if ( ! empty( $results ) ) {
 			foreach ( $results as $row ) {
-				fputcsv( $output, array(
-					$row['id'],
-					$row['created_at'],
-					$row['event_code'],
-					$row['severity'],
-					$row['user_login'] ?: ( $row['actor_id'] ?: 'Anonyme' ),
-					$row['actor_ip'],
-					$row['user_agent'],
-					$row['request_url'],
-					$row['metadata'],
-				) );
+				fputcsv(
+					$output,
+					array(
+						$row['id'],
+						$row['created_at'],
+						$row['event_code'],
+						$row['severity'],
+						$row['user_login'] ?: ( $row['actor_id'] ?: 'Anonyme' ),
+						$row['actor_ip'],
+						$row['user_agent'],
+						$row['request_url'],
+						$row['metadata'],
+					)
+				);
 			}
 		}
 		fclose( $output );
@@ -256,16 +292,54 @@ class LBS_Admin_Api {
 			$duration
 		);
 
-		LBS_AuditLog::log( 
-			LBS_AuditLog::EVENT_AUTH_LOCKOUT, 
-			LBS_AuditLog::SEVERITY_CRITICAL, 
-			array( 
-				'ip'     => $ip, 
-				'reason' => 'manual_quick_ban'
-			) 
+		LBS_AuditLog::log(
+			LBS_EventCodes::AUTH_LOCKOUT,
+			LBS_EventCodes::SEVERITY_CRITICAL,
+			array(
+				'ip'     => $ip,
+				'reason' => 'manual_quick_ban',
+			)
 		);
 
 		return new WP_REST_Response( array( 'message' => 'IP bannie pour 7 jours' ), 200 );
+	}
+
+	/**
+	 * Débannit une IP.
+	 *
+	 * @param WP_REST_Request $request
+	 * @return WP_REST_Response
+	 */
+	public function unban_ip( WP_REST_Request $request ): WP_REST_Response {
+		$ip = sanitize_text_field( $request->get_param( 'ip' ) );
+
+		if ( ! $ip ) {
+			return new WP_REST_Response( array( 'message' => 'IP manquante' ), 400 );
+		}
+
+		$config = LBS_Helpers::get_config();
+		$protection = new LBS_LoginProtection( $config );
+		$protection->unlock_ip( $ip );
+
+		return new WP_REST_Response( array( 'message' => 'IP débloquée' ), 200 );
+	}
+
+	/**
+	 * Récupère la liste des IPs actuellement bannies.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function get_banned_ips(): WP_REST_Response {
+		$config = LBS_Helpers::get_config();
+		$protection = new LBS_LoginProtection( $config );
+		$locked = $protection->get_locked_ips();
+
+		// On n'extrait que les IPs pour simplifier le check côté JS.
+		$ips = array_map( function( $item ) {
+			return $item['ip'] ?? '';
+		}, $locked );
+
+		return new WP_REST_Response( array( 'banned' => array_filter( $ips ) ), 200 );
 	}
 
 	/**
@@ -348,6 +422,12 @@ class LBS_Admin_Api {
 			return new WP_REST_Response( array( 'error' => 'Impossible d\'écrire le fichier .htaccess.' ), 500 );
 		}
 
-		return new WP_REST_Response( array( 'success' => true, 'content' => (string) $params['content'] ), 200 );
+		return new WP_REST_Response(
+			array(
+				'success' => true,
+				'content' => (string) $params['content'],
+			),
+			200
+		);
 	}
 }
